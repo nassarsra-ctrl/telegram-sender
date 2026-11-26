@@ -1,12 +1,13 @@
 import os
 import logging
+import asyncio
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
 from telegram.ext import Application, CommandHandler, ContextTypes
 from dotenv import load_dotenv
 
 load_dotenv()
-BOT_TOKEN = os.getenv("BOT_TOKEN", "9036646897:AAEUxlHmqkA5uZdxwzCzO8JIVLyGgiby67E")
-MINI_APP_URL = os.getenv("MINI_APP_URL", "https://telegram-sender-cz75.onrender.com/verify")
+BOT_TOKEN = os.getenv("BOT_TOKEN", "")
+MINI_APP_URL = os.getenv("MINI_APP_URL", "https://deine-render-url.onrender.com/verify")
 
 logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
 
@@ -18,7 +19,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = "✅ Drücke hier um dich zu verifizieren"
     await update.message.reply_text(text, reply_markup=reply_markup)
 
-def main():
+async def main():
     if not BOT_TOKEN:
         print("❌ BOT_TOKEN fehlt")
         return
@@ -26,7 +27,12 @@ def main():
     app.add_handler(CommandHandler("start", start))
     print("Bot startet...")
     print(f"Mini-App URL: {MINI_APP_URL}")
-    app.run_polling(allowed_updates=Update.ALL_TYPES)
+    await app.initialize()
+    await app.start()
+    await app.updater.start_polling(allowed_updates=Update.ALL_TYPES)
+    print("Bot läuft. Warte auf Nachrichten...")
+    while True:
+        await asyncio.sleep(3600)
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
