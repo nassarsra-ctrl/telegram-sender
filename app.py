@@ -6,6 +6,8 @@ import shutil
 from pathlib import Path
 from telethon import TelegramClient
 from telethon.errors import FloodWaitError, SessionPasswordNeededError
+from telethon.tl.functions.channels import JoinChannelRequest
+from telethon.tl.functions.messages import ImportChatInviteRequest
 from fastapi import FastAPI, UploadFile, File, Form, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 import uvicorn
@@ -149,6 +151,15 @@ button:disabled { opacity:0.5; }
   </div>
 
   <div class="card">
+    <h2>🔗 In Gruppe joinen</h2>
+    <label>Accounts</label>
+    <div class="accounts" id="joinAccountSelect"></div>
+    <label>Gruppen-Link</label>
+    <input id="joinLink" placeholder="https://t.me/gruppe oder https://t.me/+invite">
+    <button onclick="joinGroup()">Joinen</button>
+  </div>
+
+  <div class="card">
     <h2>📤 Senden</h2>
     <form id="sendForm">
       <label>Accounts</label>
@@ -189,9 +200,11 @@ async function loadSessions() {
   const sessions = await res.json();
   const list = document.getElementById('sessionList');
   const select = document.getElementById('accountSelect');
+  const joinSelect = document.getElementById('joinAccountSelect');
   if (!sessions.length) {
     list.innerHTML = '<p style="color:#666;">Keine Sessions</p>';
     select.innerHTML = '<p style="color:#666;">Keine Accounts</p>';
+    joinSelect.innerHTML = '<p style="color:#666;">Keine Accounts</p>';
     return;
   }
   list.innerHTML = sessions.map(s => `
@@ -200,9 +213,15 @@ async function loadSessions() {
       <button class="delete-btn" onclick="deleteSession('${s}')">Löschen</button>
     </div>
   `).join('');
-  select.innerHTML = sessions.map(s => `
+  const chips = sessions.map(s => `
     <label class="account-chip">
       <input type="checkbox" name="accounts" value="${s}" checked> ${s}
+    </label>
+  `).join('');
+  select.innerHTML = chips;
+  joinSelect.innerHTML = sessions.map(s => `
+    <label class="account-chip">
+      <input type="checkbox" name="joinAccounts" value="${s}" checked> ${s}
     </label>
   `).join('');
 }
@@ -263,6 +282,17 @@ async function deleteSession(name) {
   const data = await res.json();
   if (data.ok) { log('Gelöscht: ' + name, 'success'); loadSessions(); }
   else log(data.error || 'Fehler', 'error');
+}
+
+async function joinGroup() {
+  const link = document.getElementById('joinLink').value.trim();
+  const accounts = [...document.querySelectorAll('input[name="joinAccounts"]:checked')].map(i => i.value);
+  if (!link) return alert('Link eingeben');
+  if (!accounts.length) return alert('Account auswählen');
+  log('Joine Gruppe...', 'info');
+  const res = await fetch('/join', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({link, accounts}) });
+  const data = await res.json();
+  data.results.forEach(r => log(r.message, r.ok ? 'success' : 'error'));
 }
 
 async function loadGroups() {
@@ -365,7 +395,7 @@ async def get_groups(request: Request):
     accounts = data.get("accounts", [])
     groups = []
     seen = set()
-    for session_name in accounts[:3]:  # Limit to first 3 accounts for speed
+    for session_name in accounts[:3]:
         try:
             client = TelegramClient(str(SESSIONS_DIR / session_name), API_ID, API_HASH)
             await client.start()
@@ -378,6 +408,32 @@ async def get_groups(request: Request):
         except Exception:
             pass
     return {"groups": groups[:100]}
+
+@app.post("/join")
+async def join_group(request: Request):
+    if not check_auth(request):
+        return JSONResponse({"results": [{"ok": False, "message": "unauthorized"}]}, status_code=401)
+    data = await request.json()
+    link = data.get("link", "").strip()
+    accounts = data.get("accounts", [])
+    results = []
+    for session_name in accounts:
+        try:
+            client = TelegramClient(str(SESSIONS_DIR / session_name), API_ID, API_HASH)
+            await client.start()
+            me = await client.get_me()
+            name = me.first_name or session_name
+            if "/+" in link or "joinchat" in link:
+                hash_part = link.split("/")[-1].replace("+", "")
+                await client(ImportChatInviteRequest(hash_part))
+            else:
+                await client(JoinChannelRequest(link))
+            results.append({"ok": True, "message": f"[{name}] erfolgreich gejoint"})
+            await client.disconnect()
+            await asyncio.sleep(2)
+        except Exception as e:
+            results.append({"ok": False, "message": f"[{session_name}] {str(e)[:80]}"})
+    return {"results": results}
 
 @app.post("/session/upload")
 async def upload_session(request: Request, file: UploadFile = File(...)):
