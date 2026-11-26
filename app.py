@@ -2,6 +2,7 @@ import asyncio
 import os
 import tempfile
 import secrets
+import shutil
 from pathlib import Path
 from telethon import TelegramClient
 from telethon.errors import FloodWaitError, SessionPasswordNeededError
@@ -39,14 +40,13 @@ LOGIN_HTML = """
 <title>Login</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
-body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); min-height:100vh; display:flex; align-items:center; justify-content:center; color:#fff; }
-.login-box { background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border:1px solid rgba(255,255,255,0.1); padding:48px 40px; border-radius:24px; width:100%; max-width:400px; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,0.4); }
-h1 { font-size:32px; margin-bottom:8px; background: linear-gradient(90deg, #00d4ff, #7b2cbf); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
-.subtitle { color:#aaa; margin-bottom:32px; font-size:15px; }
-input { width:100%; padding:14px 16px; margin:12px 0; border-radius:12px; border:1px solid rgba(255,255,255,0.15); background:rgba(0,0,0,0.3); color:#fff; font-size:16px; outline:none; transition:all 0.3s; }
-input:focus { border-color:#00d4ff; box-shadow:0 0 0 3px rgba(0,212,255,0.2); }
-button { width:100%; padding:14px; margin-top:8px; background: linear-gradient(90deg, #00d4ff, #7b2cbf); border:none; border-radius:12px; color:#fff; font-size:16px; font-weight:600; cursor:pointer; transition:transform 0.2s, box-shadow 0.2s; }
-button:hover { transform:translateY(-2px); box-shadow:0 10px 25px rgba(0,212,255,0.3); }
+body { font-family: system-ui, -apple-system, sans-serif; background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); min-height:100vh; display:flex; align-items:center; justify-content:center; color:#fff; padding:16px; }
+.login-box { background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border:1px solid rgba(255,255,255,0.1); padding:40px 24px; border-radius:24px; width:100%; max-width:400px; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,0.4); }
+h1 { font-size:28px; margin-bottom:8px; background: linear-gradient(90deg, #00d4ff, #7b2cbf); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+.subtitle { color:#aaa; margin-bottom:28px; font-size:15px; }
+input { width:100%; padding:14px 16px; margin:12px 0; border-radius:12px; border:1px solid rgba(255,255,255,0.15); background:rgba(0,0,0,0.3); color:#fff; font-size:16px; outline:none; }
+input:focus { border-color:#00d4ff; }
+button { width:100%; padding:14px; margin-top:8px; background: linear-gradient(90deg, #00d4ff, #7b2cbf); border:none; border-radius:12px; color:#fff; font-size:16px; font-weight:600; cursor:pointer; }
 .error { color:#ff6b6b; margin-top:16px; font-size:14px; }
 </style>
 </head>
@@ -73,97 +73,116 @@ DASHBOARD_HTML = """
 <title>Admin Dashboard</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
-body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background:#0a0a0f; color:#e8e8e8; min-height:100vh; }
-.header { background: linear-gradient(90deg, #1a1a2e, #16213e); padding:20px 40px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); }
-.header h1 { font-size:24px; background: linear-gradient(90deg, #00d4ff, #a855f7); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
-.logout { background:#ef4444; color:#fff; padding:10px 20px; border-radius:10px; text-decoration:none; font-weight:600; transition:background 0.2s; }
-.logout:hover { background:#dc2626; }
-.container { max-width:1100px; margin:0 auto; padding:30px 20px; }
-.grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
-@media (max-width:800px) { .grid { grid-template-columns:1fr; } }
-.card { background:#12121a; border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:24px; }
-.card h2 { font-size:18px; margin-bottom:16px; color:#00d4ff; display:flex; align-items:center; gap:8px; }
+body { font-family: system-ui, -apple-system, sans-serif; background:#0a0a0f; color:#e8e8e8; min-height:100vh; }
+.header { background: linear-gradient(90deg, #1a1a2e, #16213e); padding:16px 20px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); position:sticky; top:0; z-index:100; }
+.header h1 { font-size:20px; background: linear-gradient(90deg, #00d4ff, #a855f7); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+.header-right { display:flex; align-items:center; gap:10px; }
+.verified { background: linear-gradient(90deg, #065f46, #047857); color:#6ee7b7; padding:6px 12px; border-radius:20px; font-size:12px; font-weight:600; }
+.logout { background:#ef4444; color:#fff; padding:8px 14px; border-radius:10px; text-decoration:none; font-weight:600; font-size:14px; }
+.container { max-width:900px; margin:0 auto; padding:16px; }
+.card { background:#12121a; border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:20px; margin-bottom:16px; }
+.card h2 { font-size:17px; margin-bottom:14px; color:#00d4ff; }
 label { display:block; margin:12px 0 6px; font-weight:500; color:#ccc; font-size:14px; }
-input, textarea, select { width:100%; padding:12px 14px; border-radius:10px; border:1px solid rgba(255,255,255,0.1); background:#1a1a24; color:#fff; font-size:15px; outline:none; transition:border 0.2s; }
+input, textarea { width:100%; padding:12px 14px; border-radius:10px; border:1px solid rgba(255,255,255,0.1); background:#1a1a24; color:#fff; font-size:16px; outline:none; }
 input:focus, textarea:focus { border-color:#00d4ff; }
-textarea { resize:vertical; min-height:80px; }
-button { background: linear-gradient(90deg, #00d4ff, #7b2cbf); color:#fff; border:none; padding:12px 20px; border-radius:10px; font-weight:600; cursor:pointer; transition:transform 0.2s, opacity 0.2s; width:100%; margin-top:12px; }
-button:hover { transform:translateY(-1px); }
-button:disabled { opacity:0.6; cursor:not-allowed; }
-.accounts { display:flex; flex-wrap:wrap; gap:10px; margin-top:8px; }
-.account-chip { background:#1e1e2e; border:1px solid rgba(255,255,255,0.1); padding:8px 14px; border-radius:20px; display:flex; align-items:center; gap:8px; font-size:14px; }
+textarea { resize:vertical; min-height:70px; }
+button { background: linear-gradient(90deg, #00d4ff, #7b2cbf); color:#fff; border:none; padding:12px 20px; border-radius:10px; font-weight:600; cursor:pointer; width:100%; margin-top:10px; font-size:15px; }
+button:disabled { opacity:0.6; }
+.accounts { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+.account-chip { background:#1e1e2e; border:1px solid rgba(255,255,255,0.1); padding:8px 12px; border-radius:20px; display:flex; align-items:center; gap:6px; font-size:14px; }
 .account-chip input { width:auto; margin:0; }
-.account-list { max-height:200px; overflow-y:auto; }
-.session-item { background:#1a1a24; padding:12px 16px; border-radius:10px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; }
-.delete-btn { background:#ef4444; color:#fff; border:none; padding:6px 12px; border-radius:8px; cursor:pointer; font-size:13px; width:auto; }
-#log { background:#0d0d12; border-radius:10px; padding:16px; height:180px; overflow-y:auto; font-family:monospace; font-size:13px; line-height:1.5; }
+.session-item { background:#1a1a24; padding:12px 14px; border-radius:10px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; }
+.delete-btn { background:#ef4444; color:#fff; border:none; padding:6px 12px; border-radius:8px; cursor:pointer; font-size:13px; width:auto; margin:0; }
+#log { background:#0d0d12; border-radius:10px; padding:14px; height:160px; overflow-y:auto; font-family:monospace; font-size:13px; line-height:1.5; }
 .success { color:#4ade80; }
 .error { color:#f87171; }
 .info { color:#60a5fa; }
-.verified { background: linear-gradient(90deg, #065f46, #047857); color:#6ee7b7; padding:6px 14px; border-radius:20px; font-size:13px; font-weight:600; }
+.file-upload { border:2px dashed rgba(255,255,255,0.15); border-radius:12px; padding:20px; text-align:center; margin-top:8px; }
+.file-upload input { display:none; }
+.file-upload label { color:#00d4ff; cursor:pointer; font-weight:600; }
+@media (max-width:480px) {
+  .header { padding:12px 16px; }
+  .header h1 { font-size:18px; }
+  .verified { display:none; }
+}
 </style>
 </head>
 <body>
 <div class="header">
-  <h1>Telegram Admin Dashboard</h1>
-  <div style="display:flex; align-items:center; gap:16px;">
+  <h1>Telegram Dashboard</h1>
+  <div class="header-right">
     <span class="verified">Verifiziert ✓</span>
     <a href="/logout" class="logout">Logout</a>
   </div>
 </div>
 
 <div class="container">
-  <div class="grid">
-    <!-- Account hinzufügen -->
-    <div class="card">
-      <h2>➕ Account hinzufügen</h2>
-      <input id="phone" placeholder="+49 170 1234567">
-      <button onclick="startLogin()">Code anfordern</button>
-      <div id="codeArea" style="display:none; margin-top:12px;">
-        <input id="code" placeholder="Code aus Telegram">
-        <input id="password" placeholder="2FA Passwort (optional)" style="margin-top:8px;">
-        <button onclick="finishLogin()">Einloggen</button>
+  <!-- Session Datei hochladen -->
+  <div class="card">
+    <h2>📁 Session-Datei hochladen</h2>
+    <form id="uploadForm" enctype="multipart/form-data">
+      <div class="file-upload">
+        <input type="file" id="sessionFile" name="file" accept=".session">
+        <label for="sessionFile">.session Datei auswählen</label>
+        <div id="fileName" style="margin-top:8px; color:#aaa; font-size:13px;"></div>
       </div>
-    </div>
+      <button type="submit">Session hochladen</button>
+    </form>
+  </div>
 
-    <!-- Sessions -->
-    <div class="card">
-      <h2>📱 Sessions</h2>
-      <div id="sessionList" class="account-list"></div>
+  <!-- Account hinzufügen -->
+  <div class="card">
+    <h2>➕ Account per Telefon hinzufügen</h2>
+    <input id="phone" placeholder="+49 170 1234567">
+    <button onclick="startLogin()">Code anfordern</button>
+    <div id="codeArea" style="display:none; margin-top:12px;">
+      <input id="code" placeholder="Code aus Telegram">
+      <input id="password" placeholder="2FA Passwort (optional)" style="margin-top:8px;">
+      <button onclick="finishLogin()">Einloggen</button>
     </div>
+  </div>
 
-    <!-- Senden -->
-    <div class="card" style="grid-column:1 / -1;">
-      <h2>📤 Nachricht senden</h2>
-      <form id="sendForm">
-        <label>Accounts auswählen</label>
-        <div class="accounts" id="accountSelect"></div>
-        
-        <label>Gruppen-Link oder @username</label>
-        <input name="group" placeholder="https://t.me/gruppe oder @gruppe" required>
-        
-        <label>Datei (optional)</label>
-        <input type="file" name="file">
-        
-        <label>Text / Caption</label>
-        <textarea name="caption" placeholder="Nachricht..."></textarea>
-        
-        <label>Delay zwischen Accounts (Sekunden)</label>
-        <input type="number" name="delay" value="8" min="3" max="120">
-        
-        <button type="submit">Jetzt senden</button>
-      </form>
-    </div>
+  <!-- Sessions -->
+  <div class="card">
+    <h2>📱 Sessions</h2>
+    <div id="sessionList"></div>
+  </div>
 
-    <!-- Log -->
-    <div class="card" style="grid-column:1 / -1;">
-      <h2>📋 Log</h2>
-      <div id="log">Bereit...</div>
-    </div>
+  <!-- Senden -->
+  <div class="card">
+    <h2>📤 Nachricht senden</h2>
+    <form id="sendForm">
+      <label>Accounts auswählen</label>
+      <div class="accounts" id="accountSelect"></div>
+      
+      <label>Gruppen-Link oder @username</label>
+      <input name="group" placeholder="https://t.me/gruppe" required>
+      
+      <label>Datei (optional)</label>
+      <input type="file" name="file">
+      
+      <label>Text / Caption</label>
+      <textarea name="caption" placeholder="Nachricht..."></textarea>
+      
+      <label>Delay (Sekunden)</label>
+      <input type="number" name="delay" value="8" min="3">
+      
+      <button type="submit">Jetzt senden</button>
+    </form>
+  </div>
+
+  <!-- Log -->
+  <div class="card">
+    <h2>📋 Log</h2>
+    <div id="log">Bereit...</div>
   </div>
 </div>
 
 <script>
+document.getElementById('sessionFile').onchange = function() {
+  document.getElementById('fileName').textContent = this.files[0] ? this.files[0].name : '';
+};
+
 async function loadSessions() {
   const res = await fetch('/sessions');
   const sessions = await res.json();
@@ -197,6 +216,31 @@ function log(msg, type='info') {
   el.innerHTML += `<div class="${type}">${msg}</div>`;
   el.scrollTop = el.scrollHeight;
 }
+
+document.getElementById('uploadForm').onsubmit = async (e) => {
+  e.preventDefault();
+  const fileInput = document.getElementById('sessionFile');
+  if (!fileInput.files[0]) return alert('Bitte eine .session Datei auswählen');
+  
+  const data = new FormData();
+  data.append('file', fileInput.files[0]);
+  
+  log('Lade Session hoch...', 'info');
+  try {
+    const res = await fetch('/session/upload', { method:'POST', body:data });
+    const result = await res.json();
+    if (result.ok) {
+      log('Session hochgeladen: ' + result.name, 'success');
+      fileInput.value = '';
+      document.getElementById('fileName').textContent = '';
+      loadSessions();
+    } else {
+      log(result.error || 'Fehler', 'error');
+    }
+  } catch(err) {
+    log('Fehler: ' + err, 'error');
+  }
+};
 
 async function startLogin() {
   const phone = document.getElementById('phone').value.trim();
@@ -320,6 +364,18 @@ async def sessions(request: Request):
     if not check_auth(request):
         return JSONResponse({"error": "unauthorized"}, status_code=401)
     return get_sessions()
+
+@app.post("/session/upload")
+async def upload_session(request: Request, file: UploadFile = File(...)):
+    if not check_auth(request):
+        return JSONResponse({"ok": False, "error": "unauthorized"}, status_code=401)
+    if not file.filename.endswith(".session"):
+        return {"ok": False, "error": "Nur .session Dateien erlaubt"}
+    name = Path(file.filename).stem
+    dest = SESSIONS_DIR / f"{name}.session"
+    with open(dest, "wb") as f:
+        shutil.copyfileobj(file.file, f)
+    return {"ok": True, "name": name}
 
 @app.post("/session/delete")
 async def delete_session(request: Request):
