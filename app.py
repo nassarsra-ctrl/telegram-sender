@@ -40,22 +40,22 @@ LOGIN_HTML = """
 <title>Login</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
-body { font-family: system-ui, -apple-system, sans-serif; background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); min-height:100vh; display:flex; align-items:center; justify-content:center; color:#fff; padding:16px; }
-.login-box { background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border:1px solid rgba(255,255,255,0.1); padding:40px 24px; border-radius:24px; width:100%; max-width:400px; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,0.4); }
-h1 { font-size:28px; margin-bottom:8px; background: linear-gradient(90deg, #00d4ff, #7b2cbf); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
-.subtitle { color:#aaa; margin-bottom:28px; font-size:15px; }
-input { width:100%; padding:14px 16px; margin:12px 0; border-radius:12px; border:1px solid rgba(255,255,255,0.15); background:rgba(0,0,0,0.3); color:#fff; font-size:16px; outline:none; }
-input:focus { border-color:#00d4ff; }
-button { width:100%; padding:14px; margin-top:8px; background: linear-gradient(90deg, #00d4ff, #7b2cbf); border:none; border-radius:12px; color:#fff; font-size:16px; font-weight:600; cursor:pointer; }
-.error { color:#ff6b6b; margin-top:16px; font-size:14px; }
+body { font-family: system-ui, -apple-system, sans-serif; background:#05050a; min-height:100vh; display:flex; align-items:center; justify-content:center; color:#fff; padding:16px; }
+.login-box { background: linear-gradient(145deg, #12121c, #1a1a28); border:1px solid rgba(255,255,255,0.08); padding:48px 32px; border-radius:28px; width:100%; max-width:420px; text-align:center; box-shadow:0 30px 80px rgba(0,0,0,0.6); }
+h1 { font-size:32px; margin-bottom:6px; background: linear-gradient(90deg, #00f5ff, #b24bf3); -webkit-background-clip:text; -webkit-text-fill-color:transparent; font-weight:800; }
+.subtitle { color:#888; margin-bottom:32px; font-size:15px; }
+input { width:100%; padding:16px; margin:12px 0; border-radius:14px; border:1px solid rgba(255,255,255,0.1); background:#0d0d14; color:#fff; font-size:16px; outline:none; }
+input:focus { border-color:#00f5ff; }
+button { width:100%; padding:16px; margin-top:8px; background: linear-gradient(90deg, #00f5ff, #b24bf3); border:none; border-radius:14px; color:#000; font-size:16px; font-weight:700; cursor:pointer; }
+.error { color:#ff5555; margin-top:16px; font-size:14px; }
 </style>
 </head>
 <body>
 <div class="login-box">
-  <h1>Telegram Sender</h1>
+  <h1>Telegram</h1>
   <div class="subtitle">Admin Dashboard</div>
   <form method="post" action="/login">
-    <input type="password" name="password" placeholder="Passwort eingeben" required autofocus>
+    <input type="password" name="password" placeholder="Passwort" required autofocus>
     <button type="submit">Einloggen</button>
   </form>
   ERROR_PLACEHOLDER
@@ -73,37 +73,40 @@ DASHBOARD_HTML = """
 <title>Admin Dashboard</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
-body { font-family: system-ui, -apple-system, sans-serif; background:#0a0a0f; color:#e8e8e8; min-height:100vh; }
-.header { background: linear-gradient(90deg, #1a1a2e, #16213e); padding:16px 20px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); position:sticky; top:0; z-index:100; }
-.header h1 { font-size:20px; background: linear-gradient(90deg, #00d4ff, #a855f7); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+body { font-family: system-ui, -apple-system, sans-serif; background:#05050a; color:#eee; min-height:100vh; }
+.header { background: linear-gradient(90deg, #0d0d14, #151520); padding:16px 20px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.06); position:sticky; top:0; z-index:100; }
+.header h1 { font-size:22px; background: linear-gradient(90deg, #00f5ff, #b24bf3); -webkit-background-clip:text; -webkit-text-fill-color:transparent; font-weight:800; }
 .header-right { display:flex; align-items:center; gap:10px; }
-.verified { background: linear-gradient(90deg, #065f46, #047857); color:#6ee7b7; padding:6px 12px; border-radius:20px; font-size:12px; font-weight:600; }
-.logout { background:#ef4444; color:#fff; padding:8px 14px; border-radius:10px; text-decoration:none; font-weight:600; font-size:14px; }
-.container { max-width:900px; margin:0 auto; padding:16px; }
-.card { background:#12121a; border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:20px; margin-bottom:16px; }
-.card h2 { font-size:17px; margin-bottom:14px; color:#00d4ff; }
-label { display:block; margin:12px 0 6px; font-weight:500; color:#ccc; font-size:14px; }
-input, textarea { width:100%; padding:12px 14px; border-radius:10px; border:1px solid rgba(255,255,255,0.1); background:#1a1a24; color:#fff; font-size:16px; outline:none; }
-input:focus, textarea:focus { border-color:#00d4ff; }
+.verified { background: linear-gradient(90deg, #065f46, #047857); color:#6ee7b7; padding:6px 12px; border-radius:20px; font-size:12px; font-weight:700; }
+.logout { background:#ef4444; color:#fff; padding:8px 16px; border-radius:12px; text-decoration:none; font-weight:700; font-size:14px; }
+.container { max-width:960px; margin:0 auto; padding:16px; }
+.card { background: linear-gradient(145deg, #101018, #161620); border:1px solid rgba(255,255,255,0.06); border-radius:20px; padding:20px; margin-bottom:16px; }
+.card h2 { font-size:18px; margin-bottom:14px; color:#00f5ff; font-weight:700; }
+label { display:block; margin:12px 0 6px; font-weight:600; color:#ccc; font-size:14px; }
+input, textarea { width:100%; padding:14px; border-radius:12px; border:1px solid rgba(255,255,255,0.08); background:#0d0d14; color:#fff; font-size:15px; outline:none; }
+input:focus, textarea:focus { border-color:#00f5ff; }
 textarea { resize:vertical; min-height:70px; }
-button { background: linear-gradient(90deg, #00d4ff, #7b2cbf); color:#fff; border:none; padding:12px 20px; border-radius:10px; font-weight:600; cursor:pointer; width:100%; margin-top:10px; font-size:15px; }
-button:disabled { opacity:0.6; }
+button { background: linear-gradient(90deg, #00f5ff, #b24bf3); color:#000; border:none; padding:14px; border-radius:12px; font-weight:700; cursor:pointer; width:100%; margin-top:10px; font-size:15px; }
+button:disabled { opacity:0.5; }
+.secondary { background:#1e1e2e; color:#fff; }
 .accounts { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
-.account-chip { background:#1e1e2e; border:1px solid rgba(255,255,255,0.1); padding:8px 12px; border-radius:20px; display:flex; align-items:center; gap:6px; font-size:14px; }
+.account-chip { background:#1a1a28; border:1px solid rgba(255,255,255,0.08); padding:10px 14px; border-radius:24px; display:flex; align-items:center; gap:8px; font-size:14px; }
 .account-chip input { width:auto; margin:0; }
-.session-item { background:#1a1a24; padding:12px 14px; border-radius:10px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; }
+.session-item { background:#14141e; padding:12px 14px; border-radius:12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; }
 .delete-btn { background:#ef4444; color:#fff; border:none; padding:6px 12px; border-radius:8px; cursor:pointer; font-size:13px; width:auto; margin:0; }
-#log { background:#0d0d12; border-radius:10px; padding:14px; height:160px; overflow-y:auto; font-family:monospace; font-size:13px; line-height:1.5; }
+.groups { max-height:280px; overflow-y:auto; margin-top:8px; }
+.group-item { background:#14141e; padding:12px 14px; border-radius:12px; margin-bottom:6px; display:flex; align-items:center; gap:10px; }
+.group-item input { width:auto; }
+#log { background:#0a0a10; border-radius:12px; padding:14px; height:160px; overflow-y:auto; font-family:monospace; font-size:13px; }
 .success { color:#4ade80; }
 .error { color:#f87171; }
 .info { color:#60a5fa; }
-.file-upload { border:2px dashed rgba(255,255,255,0.15); border-radius:12px; padding:20px; text-align:center; margin-top:8px; }
+.file-upload { border:2px dashed rgba(255,255,255,0.12); border-radius:14px; padding:24px; text-align:center; }
 .file-upload input { display:none; }
-.file-upload label { color:#00d4ff; cursor:pointer; font-weight:600; }
+.file-upload label { color:#00f5ff; cursor:pointer; font-weight:700; }
 @media (max-width:480px) {
-  .header { padding:12px 16px; }
-  .header h1 { font-size:18px; }
   .verified { display:none; }
+  .header h1 { font-size:18px; }
 }
 </style>
 </head>
@@ -117,61 +120,59 @@ button:disabled { opacity:0.6; }
 </div>
 
 <div class="container">
-  <!-- Session Datei hochladen -->
   <div class="card">
-    <h2>📁 Session-Datei hochladen</h2>
-    <form id="uploadForm" enctype="multipart/form-data">
+    <h2>📁 Session hochladen</h2>
+    <form id="uploadForm">
       <div class="file-upload">
-        <input type="file" id="sessionFile" name="file" accept=".session">
+        <input type="file" id="sessionFile" accept=".session">
         <label for="sessionFile">.session Datei auswählen</label>
-        <div id="fileName" style="margin-top:8px; color:#aaa; font-size:13px;"></div>
+        <div id="fileName" style="margin-top:8px; color:#888; font-size:13px;"></div>
       </div>
-      <button type="submit">Session hochladen</button>
+      <button type="submit">Hochladen</button>
     </form>
   </div>
 
-  <!-- Account hinzufügen -->
   <div class="card">
-    <h2>➕ Account per Telefon hinzufügen</h2>
+    <h2>➕ Account per Telefon</h2>
     <input id="phone" placeholder="+49 170 1234567">
     <button onclick="startLogin()">Code anfordern</button>
     <div id="codeArea" style="display:none; margin-top:12px;">
-      <input id="code" placeholder="Code aus Telegram">
-      <input id="password" placeholder="2FA Passwort (optional)" style="margin-top:8px;">
+      <input id="code" placeholder="Code">
+      <input id="password" placeholder="2FA (optional)" style="margin-top:8px;">
       <button onclick="finishLogin()">Einloggen</button>
     </div>
   </div>
 
-  <!-- Sessions -->
   <div class="card">
     <h2>📱 Sessions</h2>
     <div id="sessionList"></div>
   </div>
 
-  <!-- Senden -->
   <div class="card">
-    <h2>📤 Nachricht senden</h2>
+    <h2>📤 Senden</h2>
     <form id="sendForm">
-      <label>Accounts auswählen</label>
+      <label>Accounts</label>
       <div class="accounts" id="accountSelect"></div>
-      
-      <label>Gruppen-Link oder @username</label>
-      <input name="group" placeholder="https://t.me/gruppe" required>
-      
+
+      <button type="button" class="secondary" onclick="loadGroups()">Gruppen laden</button>
+      <div class="groups" id="groupList"></div>
+
+      <label>Oder manuell eingeben</label>
+      <input name="group" id="manualGroup" placeholder="https://t.me/gruppe oder @gruppe">
+
       <label>Datei (optional)</label>
       <input type="file" name="file">
-      
+
       <label>Text / Caption</label>
       <textarea name="caption" placeholder="Nachricht..."></textarea>
-      
+
       <label>Delay (Sekunden)</label>
       <input type="number" name="delay" value="8" min="3">
-      
-      <button type="submit">Jetzt senden</button>
+
+      <button type="submit">Senden</button>
     </form>
   </div>
 
-  <!-- Log -->
   <div class="card">
     <h2>📋 Log</h2>
     <div id="log">Bereit...</div>
@@ -186,27 +187,22 @@ document.getElementById('sessionFile').onchange = function() {
 async function loadSessions() {
   const res = await fetch('/sessions');
   const sessions = await res.json();
-  
   const list = document.getElementById('sessionList');
   const select = document.getElementById('accountSelect');
-  
   if (!sessions.length) {
-    list.innerHTML = '<p style="color:#888;">Keine Sessions vorhanden</p>';
-    select.innerHTML = '<p style="color:#888;">Keine Accounts</p>';
+    list.innerHTML = '<p style="color:#666;">Keine Sessions</p>';
+    select.innerHTML = '<p style="color:#666;">Keine Accounts</p>';
     return;
   }
-  
   list.innerHTML = sessions.map(s => `
     <div class="session-item">
       <span>${s}</span>
       <button class="delete-btn" onclick="deleteSession('${s}')">Löschen</button>
     </div>
   `).join('');
-  
   select.innerHTML = sessions.map(s => `
     <label class="account-chip">
-      <input type="checkbox" name="accounts" value="${s}" checked>
-      ${s}
+      <input type="checkbox" name="accounts" value="${s}" checked> ${s}
     </label>
   `).join('');
 }
@@ -220,105 +216,101 @@ function log(msg, type='info') {
 document.getElementById('uploadForm').onsubmit = async (e) => {
   e.preventDefault();
   const fileInput = document.getElementById('sessionFile');
-  if (!fileInput.files[0]) return alert('Bitte eine .session Datei auswählen');
-  
+  if (!fileInput.files[0]) return alert('Datei auswählen');
   const data = new FormData();
   data.append('file', fileInput.files[0]);
-  
   log('Lade Session hoch...', 'info');
   try {
     const res = await fetch('/session/upload', { method:'POST', body:data });
     const result = await res.json();
     if (result.ok) {
-      log('Session hochgeladen: ' + result.name, 'success');
+      log('Hochgeladen: ' + result.name, 'success');
       fileInput.value = '';
       document.getElementById('fileName').textContent = '';
       loadSessions();
-    } else {
-      log(result.error || 'Fehler', 'error');
-    }
-  } catch(err) {
-    log('Fehler: ' + err, 'error');
-  }
+    } else log(result.error || 'Fehler', 'error');
+  } catch(err) { log('Fehler: ' + err, 'error'); }
 };
 
 async function startLogin() {
   const phone = document.getElementById('phone').value.trim();
   if (!phone) return alert('Nummer eingeben');
-  const res = await fetch('/login/start', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({phone})
-  });
+  const res = await fetch('/login/start', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({phone}) });
   const data = await res.json();
   if (data.ok) {
     document.getElementById('codeArea').style.display = 'block';
-    log('Code gesendet an ' + phone, 'success');
-  } else {
-    log(data.error || 'Fehler', 'error');
-  }
+    log('Code gesendet', 'success');
+  } else log(data.error || 'Fehler', 'error');
 }
 
 async function finishLogin() {
   const phone = document.getElementById('phone').value.trim();
   const code = document.getElementById('code').value.trim();
   const password = document.getElementById('password').value.trim();
-  const res = await fetch('/login/finish', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({phone, code, password})
-  });
+  const res = await fetch('/login/finish', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({phone, code, password}) });
   const data = await res.json();
   if (data.ok) {
     log('Account hinzugefügt: ' + (data.name || phone), 'success');
     document.getElementById('codeArea').style.display = 'none';
     document.getElementById('phone').value = '';
     loadSessions();
-  } else {
-    log(data.error || 'Fehler', 'error');
-  }
+  } else log(data.error || 'Fehler', 'error');
 }
 
 async function deleteSession(name) {
-  if (!confirm('Session "' + name + '" wirklich löschen?')) return;
-  const res = await fetch('/session/delete', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({name})
-  });
+  if (!confirm('Löschen?')) return;
+  const res = await fetch('/session/delete', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name}) });
   const data = await res.json();
-  if (data.ok) {
-    log('Session gelöscht: ' + name, 'success');
-    loadSessions();
-  } else {
-    log(data.error || 'Fehler', 'error');
+  if (data.ok) { log('Gelöscht: ' + name, 'success'); loadSessions(); }
+  else log(data.error || 'Fehler', 'error');
+}
+
+async function loadGroups() {
+  const checked = [...document.querySelectorAll('input[name="accounts"]:checked')].map(i => i.value);
+  if (!checked.length) return alert('Mindestens einen Account auswählen');
+  log('Lade Gruppen...', 'info');
+  const res = await fetch('/groups', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({accounts: checked}) });
+  const data = await res.json();
+  const list = document.getElementById('groupList');
+  if (!data.groups || !data.groups.length) {
+    list.innerHTML = '<p style="color:#666;">Keine Gruppen gefunden</p>';
+    return;
   }
+  list.innerHTML = data.groups.map(g => `
+    <label class="group-item">
+      <input type="checkbox" name="groups" value="${g.id}">
+      ${g.title}
+    </label>
+  `).join('');
+  log(data.groups.length + ' Gruppen geladen', 'success');
 }
 
 document.getElementById('sendForm').onsubmit = async (e) => {
   e.preventDefault();
   const form = e.target;
   const data = new FormData(form);
-  const checked = [...document.querySelectorAll('input[name="accounts"]:checked')].map(i => i.value);
-  if (!checked.length) return alert('Mindestens einen Account auswählen');
+  const accounts = [...document.querySelectorAll('input[name="accounts"]:checked')].map(i => i.value);
+  const groups = [...document.querySelectorAll('input[name="groups"]:checked')].map(i => i.value);
+  const manual = document.getElementById('manualGroup').value.trim();
+  
+  if (!accounts.length) return alert('Account auswählen');
+  if (!groups.length && !manual) return alert('Gruppe auswählen oder manuell eingeben');
+  
   data.delete('accounts');
-  checked.forEach(a => data.append('accounts', a));
+  data.delete('groups');
+  accounts.forEach(a => data.append('accounts', a));
+  groups.forEach(g => data.append('groups', g));
+  if (manual) data.append('manual', manual);
   
-  log('Starte Senden an ' + checked.length + ' Account(s)...', 'info');
-  const btn = form.querySelector('button');
+  log('Sende...', 'info');
+  const btn = form.querySelector('button[type=submit]');
   btn.disabled = true;
-  btn.textContent = 'Sende...';
-  
   try {
     const res = await fetch('/send', {method:'POST', body:data});
     const result = await res.json();
     result.results.forEach(r => log(r.message, r.ok ? 'success' : 'error'));
-  } catch(err) {
-    log('Fehler: ' + err, 'error');
-  }
-  
+  } catch(err) { log('Fehler: ' + err, 'error'); }
   btn.disabled = false;
-  btn.textContent = 'Jetzt senden';
 };
 
 loadSessions();
@@ -365,12 +357,34 @@ async def sessions(request: Request):
         return JSONResponse({"error": "unauthorized"}, status_code=401)
     return get_sessions()
 
+@app.post("/groups")
+async def get_groups(request: Request):
+    if not check_auth(request):
+        return JSONResponse({"error": "unauthorized"}, status_code=401)
+    data = await request.json()
+    accounts = data.get("accounts", [])
+    groups = []
+    seen = set()
+    for session_name in accounts[:3]:  # Limit to first 3 accounts for speed
+        try:
+            client = TelegramClient(str(SESSIONS_DIR / session_name), API_ID, API_HASH)
+            await client.start()
+            async for dialog in client.iter_dialogs():
+                if dialog.is_group or dialog.is_channel:
+                    if dialog.id not in seen:
+                        seen.add(dialog.id)
+                        groups.append({"id": dialog.id, "title": dialog.title or str(dialog.id)})
+            await client.disconnect()
+        except Exception:
+            pass
+    return {"groups": groups[:100]}
+
 @app.post("/session/upload")
 async def upload_session(request: Request, file: UploadFile = File(...)):
     if not check_auth(request):
         return JSONResponse({"ok": False, "error": "unauthorized"}, status_code=401)
     if not file.filename.endswith(".session"):
-        return {"ok": False, "error": "Nur .session Dateien erlaubt"}
+        return {"ok": False, "error": "Nur .session Dateien"}
     name = Path(file.filename).stem
     dest = SESSIONS_DIR / f"{name}.session"
     with open(dest, "wb") as f:
@@ -422,7 +436,7 @@ async def login_finish(request: Request):
         await client.sign_in(phone, code)
     except SessionPasswordNeededError:
         if not password:
-            return {"ok": False, "error": "2FA Passwort nötig"}
+            return {"ok": False, "error": "2FA nötig"}
         await client.sign_in(password=password)
     except Exception as e:
         return {"ok": False, "error": str(e)[:150]}
@@ -432,13 +446,16 @@ async def login_finish(request: Request):
     return {"ok": True, "name": me.first_name or phone}
 
 @app.post("/send")
-async def send(request: Request, group: str = Form(...), caption: str = Form(""), delay: int = Form(8), file: UploadFile = File(None)):
+async def send(request: Request, caption: str = Form(""), delay: int = Form(8), file: UploadFile = File(None)):
     if not check_auth(request):
         return JSONResponse({"results": [{"ok": False, "message": "unauthorized"}]}, status_code=401)
     form = await request.form()
     accounts = form.getlist("accounts")
-    if not accounts:
-        return {"results": [{"ok": False, "message": "Keine Accounts"}]}
+    groups = form.getlist("groups")
+    manual = form.get("manual", "").strip()
+    targets = groups + ([manual] if manual else [])
+    if not accounts or not targets:
+        return {"results": [{"ok": False, "message": "Keine Accounts oder Gruppen"}]}
     temp_path = None
     if file and file.filename:
         temp_path = tempfile.mktemp(suffix=Path(file.filename).suffix)
@@ -451,18 +468,19 @@ async def send(request: Request, group: str = Form(...), caption: str = Form("")
             await client.start()
             me = await client.get_me()
             name = me.first_name or session_name
-            if temp_path:
-                await client.send_file(group, temp_path, caption=caption or None)
-                results.append({"ok": True, "message": f"[{name}] Datei gesendet"})
-            elif caption:
-                await client.send_message(group, caption)
-                results.append({"ok": True, "message": f"[{name}] Text gesendet"})
-            else:
-                results.append({"ok": False, "message": f"[{name}] Nichts zum Senden"})
+            for target in targets:
+                try:
+                    if temp_path:
+                        await client.send_file(int(target) if str(target).lstrip('-').isdigit() else target, temp_path, caption=caption or None)
+                    elif caption:
+                        await client.send_message(int(target) if str(target).lstrip('-').isdigit() else target, caption)
+                    results.append({"ok": True, "message": f"[{name}] → {target} gesendet"})
+                except Exception as e:
+                    results.append({"ok": False, "message": f"[{name}] → {target}: {str(e)[:60]}"})
             await client.disconnect()
             await asyncio.sleep(delay)
         except Exception as e:
-            results.append({"ok": False, "message": f"[{session_name}] {str(e)[:100]}"})
+            results.append({"ok": False, "message": f"[{session_name}] {str(e)[:80]}"})
     if temp_path and os.path.exists(temp_path):
         os.remove(temp_path)
     return {"results": results}
