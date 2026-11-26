@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 BOT_TOKEN = os.getenv("9036646897:AAEUxlHmqkA5uZdxwzCzO8JIVLyGgiby67E", "")
-MINI_APP_URL = os.getenv("MINI_APP_URL", "https://telegram-sender-cz75.onrender.com")
+MINI_APP_URL = os.getenv("MINI_APP_URL", "https://telegram-sender-cz75.onrender.com/Verify")
 
 logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
 
