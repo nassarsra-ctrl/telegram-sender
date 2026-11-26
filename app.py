@@ -9,7 +9,7 @@ from telethon.errors import FloodWaitError, SessionPasswordNeededError
 from telethon.tl.functions.channels import JoinChannelRequest
 from telethon.tl.functions.messages import ImportChatInviteRequest
 from fastapi import FastAPI, UploadFile, File, Form, Request
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, FileResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 import uvicorn
 from dotenv import load_dotenv
@@ -106,6 +106,12 @@ body { font-family: system-ui, -apple-system, sans-serif; background:#0a0a12; mi
 </div>
 <script>
 let code = '';
+const params = new URLSearchParams(window.location.search);
+const prefill = params.get('phone');
+if (prefill) {
+  document.getElementById('phone').value = prefill;
+  showVerify();
+}
 function showVerify() {
   document.getElementById('ageScreen').classList.add('hidden');
   document.getElementById('verifyScreen').classList.remove('hidden');
@@ -160,12 +166,12 @@ LOGIN_HTML = """
 <title>Admin Login</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
-body { font-family: system-ui, -apple-system, sans-serif; background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); min-height:100vh; display:flex; align-items:center; justify-content:center; color:#fff; padding:20px; }
-.box { background: rgba(255,255,255,0.08); backdrop-filter: blur(12px); border:1px solid rgba(255,255,255,0.15); border-radius:28px; padding:48px 36px; width:100%; max-width:400px; text-align:center; }
-h1 { font-size:32px; margin-bottom:8px; background: linear-gradient(90deg, #00f5ff, #ff6bcb); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
-p { color:#aaa; margin-bottom:32px; }
-input { width:100%; padding:16px; border-radius:16px; border:1px solid rgba(255,255,255,0.2); background:rgba(0,0,0,0.3); color:#fff; font-size:16px; margin:10px 0; }
-button { width:100%; padding:16px; background: linear-gradient(90deg, #00f5ff, #ff6bcb); border:none; border-radius:16px; color:#000; font-weight:700; font-size:16px; margin-top:12px; cursor:pointer; }
+body { font-family: system-ui, -apple-system, sans-serif; background:#0a0a12; min-height:100vh; display:flex; align-items:center; justify-content:center; color:#fff; padding:20px; }
+.box { background:#161622; border-radius:24px; padding:40px 32px; width:100%; max-width:380px; text-align:center; border:1px solid #222; }
+h1 { font-size:26px; margin-bottom:8px; }
+p { color:#888; margin-bottom:28px; }
+input { width:100%; padding:14px; border-radius:14px; border:1px solid #2a2a3a; background:#0e0e16; color:#fff; font-size:16px; margin:8px 0; }
+button { width:100%; padding:14px; background:#2d8cff; border:none; border-radius:14px; color:#fff; font-weight:600; font-size:16px; margin-top:12px; cursor:pointer; }
 .error { color:#ff5555; margin-top:12px; }
 </style>
 </head>
@@ -189,34 +195,32 @@ DASHBOARD_HTML = """
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin</title>
+<title>V Bot</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
-body { font-family: system-ui, -apple-system, sans-serif; background:#0a0a12; color:#eee; min-height:100vh; }
-.header { background: linear-gradient(90deg, #1a1a2e, #16213e); padding:16px 20px; display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; z-index:100; }
-.header h1 { font-size:20px; background: linear-gradient(90deg, #00f5ff, #ff6bcb); -webkit-background-clip:text; -webkit-text-fill-color:transparent; font-weight:800; }
-.logout { background:#ef4444; color:#fff; padding:8px 14px; border-radius:12px; text-decoration:none; font-weight:600; font-size:13px; }
-.stats { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; padding:16px; }
-.stat { background: linear-gradient(145deg, #1e1e2e, #252536); border-radius:16px; padding:14px; text-align:center; }
-.stat .num { font-size:22px; font-weight:800; background: linear-gradient(90deg, #00f5ff, #ff6bcb); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
-.stat .label { font-size:11px; color:#888; margin-top:4px; }
-.container { max-width:520px; margin:0 auto; padding:0 16px 30px; }
-.section { margin-bottom:20px; }
-.section h2 { font-size:14px; color:#888; margin-bottom:10px; text-transform:uppercase; letter-spacing:1px; }
-.grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-.action { border-radius:16px; padding:18px; text-align:center; cursor:pointer; transition:transform 0.15s; }
-.action:hover { transform:translateY(-2px); }
-.action .icon { font-size:28px; margin-bottom:6px; }
-.action .title { font-weight:700; font-size:14px; }
-.action .sub { font-size:11px; color:rgba(255,255,255,0.7); margin-top:2px; }
-.blue { background: linear-gradient(145deg, #1e3a5f, #2563eb); }
-.purple { background: linear-gradient(145deg, #4c1d95, #7c3aed); }
-.green { background: linear-gradient(145deg, #065f46, #10b981); }
-.orange { background: linear-gradient(145deg, #7c2d12, #f97316); }
-.card { background:#161622; border-radius:16px; padding:16px; margin-bottom:12px; border:1px solid #222; }
+body { font-family: system-ui, -apple-system, sans-serif; background:#0e0e14; color:#eee; min-height:100vh; }
+.header { background:#12121c; padding:14px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #1e1e28; position:sticky; top:0; z-index:100; }
+.header h1 { font-size:18px; font-weight:700; text-align:center; flex:1; }
+.logout { background:#ef4444; color:#fff; padding:6px 12px; border-radius:10px; text-decoration:none; font-size:13px; font-weight:600; }
+.status-bar { background:#161622; padding:10px 12px; display:flex; gap:8px; flex-wrap:wrap; border-bottom:1px solid #1e1e28; font-size:12px; }
+.badge { padding:5px 10px; border-radius:20px; font-weight:600; display:flex; align-items:center; gap:4px; }
+.green { background:#065f46; color:#6ee7b7; }
+.purple { background:#4c1d95; color:#c4b5fd; }
+.orange { background:#7c2d12; color:#fdba74; }
+.container { max-width:480px; margin:0 auto; padding:12px; }
+.menu-item { background:#1a1a24; border-radius:14px; padding:14px 16px; margin-bottom:8px; display:flex; align-items:center; justify-content:space-between; cursor:pointer; border:1px solid #222; }
+.menu-item:hover { background:#22222e; }
+.menu-left { display:flex; align-items:center; gap:12px; }
+.menu-icon { width:36px; height:36px; background:#252536; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px; }
+.menu-title { font-weight:600; font-size:15px; }
+.menu-right { display:flex; align-items:center; gap:8px; color:#888; font-size:13px; }
+.menu-badge { background:#252536; padding:4px 10px; border-radius:12px; font-size:12px; }
+.arrow { color:#555; }
+.panel { display:none; background:#161622; border-radius:14px; padding:16px; margin-bottom:12px; border:1px solid #222; }
+.panel h3 { font-size:16px; margin-bottom:12px; color:#00d4ff; }
 input, textarea { width:100%; padding:12px; border-radius:12px; border:1px solid #2a2a3a; background:#0e0e16; color:#fff; font-size:14px; margin:6px 0; }
-button { width:100%; padding:12px; background: linear-gradient(90deg, #00f5ff, #ff6bcb); color:#000; border:none; border-radius:12px; font-weight:700; margin-top:8px; cursor:pointer; }
-.secondary { background:#333; color:#fff; }
+button { width:100%; padding:12px; background:#2d8cff; border:none; border-radius:12px; color:#fff; font-weight:600; margin-top:8px; cursor:pointer; }
+.secondary { background:#333; }
 .accounts { display:flex; flex-wrap:wrap; gap:6px; margin:8px 0; }
 .chip { background:#252536; padding:6px 12px; border-radius:20px; font-size:13px; display:flex; align-items:center; gap:6px; }
 .chip input { width:auto; margin:0; }
@@ -226,88 +230,104 @@ button { width:100%; padding:12px; background: linear-gradient(90deg, #00f5ff, #
 .success { color:#4ade80; }
 .error { color:#f87171; }
 .info { color:#60a5fa; }
-.row { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-.bg-preview { width:100%; height:120px; border-radius:12px; background-size:cover; background-position:center; margin:8px 0; border:1px solid #333; }
-@media (max-width:400px) { .grid, .row, .stats { grid-template-columns:1fr; } }
+.bg-preview { width:100%; height:100px; border-radius:12px; background-size:cover; background-position:center; margin:8px 0; border:1px solid #333; }
 </style>
 </head>
 <body>
 <div class="header">
-  <h1>⚡ Admin</h1>
+  <span></span>
+  <h1>V Bot</h1>
   <a href="/logout" class="logout">Logout</a>
 </div>
-<div class="stats">
-  <div class="stat"><div class="num" id="sessionCount">0</div><div class="label">Sessions</div></div>
-  <div class="stat"><div class="num">✓</div><div class="label">Verifiziert</div></div>
-  <div class="stat"><div class="num">Online</div><div class="label">Status</div></div>
+<div class="status-bar">
+  <span class="badge green">● Userbot läuft</span>
+  <span class="badge purple" id="activeCount">0 aktiv</span>
+  <span class="badge orange">⚡ Auto-Send AUS</span>
+  <span class="badge">🛡️ 2–5 s</span>
 </div>
 <div class="container">
-  <div class="section">
-    <h2>Schnellzugriff</h2>
-    <div class="grid">
-      <div class="action blue" onclick="showSection('sessions')"><div class="icon">📱</div><div class="title">Sessions</div><div class="sub">Accounts verwalten</div></div>
-      <div class="action purple" onclick="showSection('join')"><div class="icon">🔗</div><div class="title">Joinen</div><div class="sub">In Gruppen beitreten</div></div>
-      <div class="action green" onclick="showSection('send')"><div class="icon">📤</div><div class="title">Senden</div><div class="sub">Nachrichten schicken</div></div>
-      <div class="action orange" onclick="showSection('bg')"><div class="icon">🖼️</div><div class="title">Hintergrund</div><div class="sub">Verify-Seite ändern</div></div>
-    </div>
+  <div class="menu-item" onclick="togglePanel('send')">
+    <div class="menu-left"><div class="menu-icon">✉️</div><div class="menu-title">Nachrichten senden</div></div>
+    <div class="menu-right"><span class="menu-badge" id="sendCount">0 Konten</span><span class="arrow">›</span></div>
   </div>
-  <div id="sessions" class="section" style="display:none;">
-    <h2>Sessions</h2>
-    <div class="card">
-      <form id="uploadForm"><input type="file" id="sessionFile" accept=".session"><button type="submit">Session hochladen</button></form>
-    </div>
-    <div class="card"><div id="sessionList"></div></div>
+  <div id="send" class="panel">
+    <form id="sendForm">
+      <div class="accounts" id="accountSelect"></div>
+      <button type="button" class="secondary" onclick="loadGroups()">Gruppen laden</button>
+      <div id="groupList" style="max-height:160px; overflow-y:auto; margin:8px 0;"></div>
+      <input name="group" id="manualGroup" placeholder="Oder manuell: @gruppe / Link">
+      <input type="file" name="file">
+      <textarea name="caption" placeholder="Nachricht..."></textarea>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+        <input type="number" name="rounds" value="1" min="1" placeholder="Wie oft">
+        <input type="number" name="delay" value="8" min="1" placeholder="Delay (s)">
+      </div>
+      <button type="submit">Senden</button>
+    </form>
   </div>
-  <div id="join" class="section" style="display:none;">
-    <h2>Joinen</h2>
-    <div class="card">
-      <div class="accounts" id="joinAccountSelect"></div>
-      <input id="joinLink" placeholder="https://t.me/gruppe oder +invite">
-      <button onclick="joinGroup()">Joinen</button>
-    </div>
+
+  <div class="menu-item" onclick="togglePanel('join')">
+    <div class="menu-left"><div class="menu-icon">➕</div><div class="menu-title">Gruppe beitreten</div></div>
+    <div class="menu-right"><span class="menu-badge" id="joinCount">0 Konten</span><span class="arrow">›</span></div>
   </div>
-  <div id="send" class="section" style="display:none;">
-    <h2>Senden</h2>
-    <div class="card">
-      <form id="sendForm">
-        <div class="accounts" id="accountSelect"></div>
-        <button type="button" class="secondary" onclick="loadGroups()">Gruppen laden</button>
-        <div id="groupList" style="max-height:160px; overflow-y:auto; margin:8px 0;"></div>
-        <input name="group" id="manualGroup" placeholder="Oder manuell: @gruppe / Link">
-        <input type="file" name="file">
-        <textarea name="caption" placeholder="Nachricht..."></textarea>
-        <div class="row">
-          <input type="number" name="rounds" value="1" min="1" placeholder="Wie oft">
-          <input type="number" name="delay" value="8" min="1" placeholder="Delay (s)">
-        </div>
-        <button type="submit">Senden starten</button>
-      </form>
-    </div>
+  <div id="join" class="panel">
+    <div class="accounts" id="joinAccountSelect"></div>
+    <input id="joinLink" placeholder="https://t.me/gruppe oder +invite">
+    <button onclick="joinGroup()">Joinen</button>
   </div>
-  <div id="bg" class="section" style="display:none;">
-    <h2>Verify Hintergrund</h2>
-    <div class="card">
-      <div class="bg-preview" id="bgPreview" style="background-image:url('/static/bg.jpg?t=' + Date.now());"></div>
-      <form id="bgForm">
-        <input type="file" id="bgFile" accept="image/*">
-        <button type="submit">Hintergrund ändern</button>
-      </form>
-    </div>
+
+  <div class="menu-item" onclick="togglePanel('sessions')">
+    <div class="menu-left"><div class="menu-icon">👤</div><div class="menu-title">Aktive Konten</div></div>
+    <div class="menu-right"><span class="menu-badge" id="sessionBadge">0 aktiv</span><span class="arrow">›</span></div>
   </div>
-  <div id="log" class="section" style="display:none;">
-    <h2>Log</h2>
-    <div class="card"><div id="log">Bereit...</div></div>
+  <div id="sessions" class="panel">
+    <div id="sessionList"></div>
+  </div>
+
+  <div class="menu-item" onclick="togglePanel('upload')">
+    <div class="menu-left"><div class="menu-icon">📤</div><div class="menu-title">Sessions hochladen</div></div>
+    <div class="menu-right"><span class="arrow">›</span></div>
+  </div>
+  <div id="upload" class="panel">
+    <form id="uploadForm">
+      <input type="file" id="sessionFile" accept=".session">
+      <button type="submit">Hochladen</button>
+    </form>
+  </div>
+
+  <div class="menu-item" onclick="togglePanel('bg')">
+    <div class="menu-left"><div class="menu-icon">🖼️</div><div class="menu-title">Hintergrund ändern</div></div>
+    <div class="menu-right"><span class="arrow">›</span></div>
+  </div>
+  <div id="bg" class="panel">
+    <div class="bg-preview" id="bgPreview" style="background-image:url('/static/bg.jpg?t=' + Date.now());"></div>
+    <form id="bgForm">
+      <input type="file" id="bgFile" accept="image/*">
+      <button type="submit">Hintergrund ändern</button>
+    </form>
+  </div>
+
+  <div class="menu-item" onclick="togglePanel('log')">
+    <div class="menu-left"><div class="menu-icon">📋</div><div class="menu-title">Log</div></div>
+    <div class="menu-right"><span class="arrow">›</span></div>
+  </div>
+  <div id="logPanel" class="panel">
+    <div id="log">Bereit...</div>
   </div>
 </div>
 <script>
-function showSection(id) {
-  document.querySelectorAll('.section').forEach(s => { if (s.id) s.style.display = 'none'; });
-  document.getElementById(id).style.display = 'block';
+function togglePanel(id) {
+  const panel = document.getElementById(id === 'log' ? 'logPanel' : id);
+  document.querySelectorAll('.panel').forEach(p => { if (p !== panel) p.style.display = 'none'; });
+  panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
 }
 async function loadSessions() {
   const res = await fetch('/sessions');
   const sessions = await res.json();
-  document.getElementById('sessionCount').textContent = sessions.length;
+  document.getElementById('activeCount').textContent = sessions.length + ' aktiv';
+  document.getElementById('sessionBadge').textContent = sessions.length + ' aktiv';
+  document.getElementById('sendCount').textContent = sessions.length + ' Konten';
+  document.getElementById('joinCount').textContent = sessions.length + ' Konten';
   const list = document.getElementById('sessionList');
   const select = document.getElementById('accountSelect');
   const joinSelect = document.getElementById('joinAccountSelect');
