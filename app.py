@@ -42,25 +42,21 @@ LOGIN_HTML = """
 <title>Login</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
-body { font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif; background:#05050a; min-height:100vh; display:flex; align-items:center; justify-content:center; color:#fff; padding:20px; }
-.login-box { background: linear-gradient(160deg, #111118 0%, #1a1a28 100%); border:1px solid rgba(255,255,255,0.08); padding:48px 36px; border-radius:32px; width:100%; max-width:420px; text-align:center; box-shadow:0 40px 100px rgba(0,0,0,0.7); }
-.logo { font-size:42px; margin-bottom:8px; }
-h1 { font-size:28px; margin-bottom:4px; background: linear-gradient(90deg, #00f5ff, #b24bf3); -webkit-background-clip:text; -webkit-text-fill-color:transparent; font-weight:800; letter-spacing:-0.5px; }
-.subtitle { color:#777; margin-bottom:36px; font-size:15px; }
-input { width:100%; padding:16px 18px; margin:10px 0; border-radius:16px; border:1px solid rgba(255,255,255,0.1); background:#0a0a10; color:#fff; font-size:16px; outline:none; transition:all 0.2s; }
-input:focus { border-color:#00f5ff; box-shadow:0 0 0 4px rgba(0,245,255,0.15); }
-button { width:100%; padding:16px; margin-top:12px; background: linear-gradient(90deg, #00f5ff, #b24bf3); border:none; border-radius:16px; color:#000; font-size:16px; font-weight:700; cursor:pointer; transition:transform 0.15s; }
-button:hover { transform:translateY(-1px); }
-.error { color:#ff5555; margin-top:16px; font-size:14px; }
+body { font-family: system-ui, -apple-system, sans-serif; background:#0a0a12; min-height:100vh; display:flex; align-items:center; justify-content:center; color:#fff; padding:20px; }
+.box { background:#161622; border-radius:24px; padding:40px 32px; width:100%; max-width:380px; text-align:center; border:1px solid rgba(255,255,255,0.08); }
+h1 { font-size:26px; margin-bottom:8px; }
+p { color:#888; margin-bottom:28px; }
+input { width:100%; padding:14px; border-radius:14px; border:1px solid #2a2a3a; background:#0e0e16; color:#fff; font-size:16px; margin:8px 0; }
+button { width:100%; padding:14px; background:#2d8cff; border:none; border-radius:14px; color:#fff; font-weight:600; font-size:16px; margin-top:12px; cursor:pointer; }
+.error { color:#ff5555; margin-top:12px; }
 </style>
 </head>
 <body>
-<div class="login-box">
-  <div class="logo">⚡</div>
-  <h1>Telegram</h1>
-  <div class="subtitle">Admin Dashboard</div>
+<div class="box">
+  <h1>⚡ Telegram</h1>
+  <p>Admin Dashboard</p>
   <form method="post" action="/login">
-    <input type="password" name="password" placeholder="Passwort eingeben" required autofocus>
+    <input type="password" name="password" placeholder="Passwort" required>
     <button type="submit">Einloggen</button>
   </form>
   ERROR_PLACEHOLDER
@@ -78,175 +74,169 @@ DASHBOARD_HTML = """
 <title>Dashboard</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
-body { font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif; background:#05050a; color:#eee; min-height:100vh; }
-.header { background: linear-gradient(90deg, #0c0c14, #141420); padding:16px 20px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.06); position:sticky; top:0; z-index:100; backdrop-filter:blur(12px); }
-.header h1 { font-size:20px; background: linear-gradient(90deg, #00f5ff, #b24bf3); -webkit-background-clip:text; -webkit-text-fill-color:transparent; font-weight:800; }
-.header-right { display:flex; align-items:center; gap:10px; }
-.verified { background: linear-gradient(90deg, #065f46, #047857); color:#6ee7b7; padding:6px 12px; border-radius:20px; font-size:12px; font-weight:700; }
-.logout { background:#ef4444; color:#fff; padding:8px 14px; border-radius:12px; text-decoration:none; font-weight:700; font-size:13px; }
-.container { max-width:900px; margin:0 auto; padding:16px; }
-.tabs { display:flex; gap:8px; margin-bottom:16px; overflow-x:auto; padding-bottom:4px; }
-.tab { background:#12121c; border:1px solid rgba(255,255,255,0.08); color:#aaa; padding:10px 18px; border-radius:14px; cursor:pointer; font-weight:600; font-size:14px; white-space:nowrap; transition:all 0.2s; }
-.tab.active { background: linear-gradient(90deg, #00f5ff, #b24bf3); color:#000; border-color:transparent; }
-.panel { display:none; }
-.panel.active { display:block; }
-.card { background: linear-gradient(160deg, #101018, #161620); border:1px solid rgba(255,255,255,0.06); border-radius:20px; padding:20px; margin-bottom:14px; }
-.card h2 { font-size:17px; margin-bottom:14px; color:#00f5ff; font-weight:700; }
-label { display:block; margin:12px 0 6px; font-weight:600; color:#ccc; font-size:13px; }
-input, textarea { width:100%; padding:14px; border-radius:14px; border:1px solid rgba(255,255,255,0.08); background:#0a0a10; color:#fff; font-size:15px; outline:none; }
-input:focus, textarea:focus { border-color:#00f5ff; }
-textarea { resize:vertical; min-height:70px; }
-button { background: linear-gradient(90deg, #00f5ff, #b24bf3); color:#000; border:none; padding:14px; border-radius:14px; font-weight:700; cursor:pointer; width:100%; margin-top:10px; font-size:15px; }
-button:disabled { opacity:0.5; }
-.secondary { background:#1e1e2e; color:#fff; }
-.accounts { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
-.account-chip { background:#1a1a28; border:1px solid rgba(255,255,255,0.08); padding:10px 14px; border-radius:24px; display:flex; align-items:center; gap:8px; font-size:14px; }
-.account-chip input { width:auto; margin:0; }
-.session-item { background:#14141e; padding:12px 14px; border-radius:14px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; }
-.delete-btn { background:#ef4444; color:#fff; border:none; padding:6px 12px; border-radius:10px; cursor:pointer; font-size:13px; width:auto; margin:0; }
-.groups { max-height:260px; overflow-y:auto; margin-top:8px; }
-.group-item { background:#14141e; padding:12px 14px; border-radius:14px; margin-bottom:6px; display:flex; align-items:center; gap:10px; }
-.group-item input { width:auto; }
-#log { background:#0a0a10; border-radius:14px; padding:14px; height:150px; overflow-y:auto; font-family:monospace; font-size:13px; }
+body { font-family: system-ui, -apple-system, sans-serif; background:#0a0a12; color:#eee; min-height:100vh; }
+.header { background:#12121c; padding:14px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #222; position:sticky; top:0; z-index:100; }
+.header h1 { font-size:18px; font-weight:700; }
+.logout { background:#ef4444; color:#fff; padding:6px 12px; border-radius:10px; text-decoration:none; font-size:13px; font-weight:600; }
+.status-bar { background:#161622; padding:10px 16px; display:flex; gap:8px; flex-wrap:wrap; border-bottom:1px solid #222; font-size:12px; }
+.badge { padding:4px 10px; border-radius:20px; font-weight:600; }
+.green { background:#065f46; color:#6ee7b7; }
+.purple { background:#4c1d95; color:#c4b5fd; }
+.orange { background:#7c2d12; color:#fdba74; }
+.container { max-width:480px; margin:0 auto; padding:12px; }
+.card { background:#161622; border-radius:16px; margin-bottom:12px; overflow:hidden; border:1px solid #222; }
+.card-header { padding:14px 16px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; }
+.card-header h3 { font-size:15px; font-weight:600; }
+.card-body { padding:0 16px 16px; display:none; }
+.card.open .card-body { display:block; }
+.menu-item { background:#1e1e2e; border-radius:12px; padding:14px 16px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; }
+.menu-item:hover { background:#252536; }
+input, textarea, select { width:100%; padding:12px; border-radius:12px; border:1px solid #2a2a3a; background:#0e0e16; color:#fff; font-size:14px; margin:6px 0; }
+button { width:100%; padding:12px; background:#2d8cff; border:none; border-radius:12px; color:#fff; font-weight:600; margin-top:8px; cursor:pointer; }
+.secondary { background:#333; }
+.accounts { display:flex; flex-wrap:wrap; gap:6px; margin:8px 0; }
+.chip { background:#252536; padding:6px 12px; border-radius:20px; font-size:13px; display:flex; align-items:center; gap:6px; }
+.chip input { width:auto; margin:0; }
+.session-item { background:#1e1e2e; padding:10px 12px; border-radius:10px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center; }
+.delete { background:#ef4444; color:#fff; border:none; padding:4px 10px; border-radius:8px; font-size:12px; width:auto; }
+#log { background:#0e0e16; border-radius:10px; padding:12px; height:140px; overflow-y:auto; font-family:monospace; font-size:12px; }
 .success { color:#4ade80; }
 .error { color:#f87171; }
 .info { color:#60a5fa; }
-.file-upload { border:2px dashed rgba(255,255,255,0.12); border-radius:16px; padding:28px; text-align:center; }
-.file-upload input { display:none; }
-.file-upload label { color:#00f5ff; cursor:pointer; font-weight:700; }
-@media (max-width:480px) {
-  .verified { display:none; }
-  .header h1 { font-size:18px; }
-  .tab { padding:8px 14px; font-size:13px; }
-}
+.row { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+@media (max-width:400px) { .row { grid-template-columns:1fr; } }
 </style>
 </head>
 <body>
 <div class="header">
   <h1>⚡ Telegram</h1>
-  <div class="header-right">
-    <span class="verified">Verifiziert ✓</span>
-    <a href="/logout" class="logout">Logout</a>
-  </div>
+  <a href="/logout" class="logout">Logout</a>
+</div>
+
+<div class="status-bar">
+  <span class="badge green">Userbot läuft</span>
+  <span class="badge purple" id="activeCount">0 aktiv</span>
+  <span class="badge orange">Auto-Send AUS</span>
 </div>
 
 <div class="container">
-  <div class="tabs">
-    <div class="tab active" onclick="switchTab('sessions')">Sessions</div>
-    <div class="tab" onclick="switchTab('join')">Joinen</div>
-    <div class="tab" onclick="switchTab('send')">Senden</div>
-    <div class="tab" onclick="switchTab('log')">Log</div>
-  </div>
-
-  <div id="sessions" class="panel active">
-    <div class="card">
-      <h2>📁 Session hochladen</h2>
-      <form id="uploadForm">
-        <div class="file-upload">
-          <input type="file" id="sessionFile" accept=".session">
-          <label for="sessionFile">.session Datei auswählen</label>
-          <div id="fileName" style="margin-top:8px; color:#888; font-size:13px;"></div>
-        </div>
-        <button type="submit">Hochladen</button>
-      </form>
+  <div class="card open">
+    <div class="card-header" onclick="this.parentElement.classList.toggle('open')">
+      <h3>📱 Sessions</h3>
+      <span>▼</span>
     </div>
-    <div class="card">
-      <h2>➕ Account per Telefon</h2>
-      <input id="phone" placeholder="+49 170 1234567">
-      <button onclick="startLogin()">Code anfordern</button>
-      <div id="codeArea" style="display:none; margin-top:12px;">
-        <input id="code" placeholder="Code">
-        <input id="password" placeholder="2FA (optional)" style="margin-top:8px;">
-        <button onclick="finishLogin()">Einloggen</button>
+    <div class="card-body">
+      <div class="menu-item" onclick="document.getElementById('uploadArea').style.display='block'">
+        Session hochladen <span>›</span>
       </div>
-    </div>
-    <div class="card">
-      <h2>📱 Sessions</h2>
-      <div id="sessionList"></div>
+      <div id="uploadArea" style="display:none; margin-top:8px;">
+        <form id="uploadForm">
+          <input type="file" id="sessionFile" accept=".session">
+          <button type="submit">Hochladen</button>
+        </form>
+      </div>
+      <div class="menu-item" onclick="document.getElementById('phoneArea').style.display='block'">
+        Account per Telefon <span>›</span>
+      </div>
+      <div id="phoneArea" style="display:none; margin-top:8px;">
+        <input id="phone" placeholder="+49 170 1234567">
+        <button onclick="startLogin()">Code anfordern</button>
+        <div id="codeArea" style="display:none;">
+          <input id="code" placeholder="Code">
+          <input id="password" placeholder="2FA (optional)">
+          <button onclick="finishLogin()">Einloggen</button>
+        </div>
+      </div>
+      <div id="sessionList" style="margin-top:12px;"></div>
     </div>
   </div>
 
-  <div id="join" class="panel">
-    <div class="card">
-      <h2>🔗 In Gruppe joinen</h2>
+  <div class="card">
+    <div class="card-header" onclick="this.parentElement.classList.toggle('open')">
+      <h3>🔗 Joinen</h3>
+      <span>▼</span>
+    </div>
+    <div class="card-body">
       <label>Accounts</label>
       <div class="accounts" id="joinAccountSelect"></div>
-      <label>Gruppen-Link</label>
-      <input id="joinLink" placeholder="https://t.me/gruppe oder https://t.me/+invite">
+      <input id="joinLink" placeholder="https://t.me/gruppe oder +invite">
       <button onclick="joinGroup()">Joinen</button>
     </div>
   </div>
 
-  <div id="send" class="panel">
-    <div class="card">
-      <h2>📤 Nachricht senden</h2>
+  <div class="card">
+    <div class="card-header" onclick="this.parentElement.classList.toggle('open')">
+      <h3>📤 Senden</h3>
+      <span>▼</span>
+    </div>
+    <div class="card-body">
       <form id="sendForm">
         <label>Accounts</label>
         <div class="accounts" id="accountSelect"></div>
         <button type="button" class="secondary" onclick="loadGroups()">Gruppen laden</button>
-        <div class="groups" id="groupList"></div>
-        <label>Oder manuell eingeben</label>
-        <input name="group" id="manualGroup" placeholder="https://t.me/gruppe oder @gruppe">
-        <label>Datei (optional)</label>
+        <div id="groupList" style="max-height:200px; overflow-y:auto; margin:8px 0;"></div>
+        <input name="group" id="manualGroup" placeholder="Oder manuell: @gruppe / Link">
         <input type="file" name="file">
-        <label>Text / Caption</label>
         <textarea name="caption" placeholder="Nachricht..."></textarea>
-        <label>Delay (Sekunden)</label>
-        <input type="number" name="delay" value="8" min="3">
-        <button type="submit">Senden</button>
+        <div class="row">
+          <div>
+            <label>Wie oft</label>
+            <input type="number" name="rounds" value="1" min="1">
+          </div>
+          <div>
+            <label>Delay Accounts (s)</label>
+            <input type="number" name="delay" value="8" min="1">
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label>Delay Runden (s)</label>
+            <input type="number" name="round_delay" value="30" min="5">
+          </div>
+          <div>
+            <label>Delay Nachrichten (s)</label>
+            <input type="number" name="msg_delay" value="2" min="1">
+          </div>
+        </div>
+        <button type="submit">Senden starten</button>
       </form>
     </div>
   </div>
 
-  <div id="log" class="panel">
-    <div class="card">
-      <h2>📋 Log</h2>
+  <div class="card">
+    <div class="card-header" onclick="this.parentElement.classList.toggle('open')">
+      <h3>📋 Log</h3>
+      <span>▼</span>
+    </div>
+    <div class="card-body">
       <div id="log">Bereit...</div>
     </div>
   </div>
 </div>
 
 <script>
-function switchTab(id) {
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  event.target.classList.add('active');
-  document.getElementById(id).classList.add('active');
-}
-
-document.getElementById('sessionFile').onchange = function() {
-  document.getElementById('fileName').textContent = this.files[0] ? this.files[0].name : '';
-};
-
 async function loadSessions() {
   const res = await fetch('/sessions');
   const sessions = await res.json();
+  document.getElementById('activeCount').textContent = sessions.length + ' aktiv';
   const list = document.getElementById('sessionList');
   const select = document.getElementById('accountSelect');
   const joinSelect = document.getElementById('joinAccountSelect');
   if (!sessions.length) {
-    list.innerHTML = '<p style="color:#666;">Keine Sessions</p>';
-    select.innerHTML = '<p style="color:#666;">Keine Accounts</p>';
-    joinSelect.innerHTML = '<p style="color:#666;">Keine Accounts</p>';
+    list.innerHTML = '<p style="color:#666; font-size:13px;">Keine Sessions</p>';
+    select.innerHTML = '<p style="color:#666;">Keine</p>';
+    joinSelect.innerHTML = '<p style="color:#666;">Keine</p>';
     return;
   }
   list.innerHTML = sessions.map(s => `
     <div class="session-item">
       <span>${s}</span>
-      <button class="delete-btn" onclick="deleteSession('${s}')">Löschen</button>
+      <button class="delete" onclick="deleteSession('${s}')">Löschen</button>
     </div>
   `).join('');
-  const chips = sessions.map(s => `
-    <label class="account-chip">
-      <input type="checkbox" name="accounts" value="${s}" checked> ${s}
-    </label>
-  `).join('');
+  const chips = sessions.map(s => `<label class="chip"><input type="checkbox" name="accounts" value="${s}" checked> ${s}</label>`).join('');
   select.innerHTML = chips;
-  joinSelect.innerHTML = sessions.map(s => `
-    <label class="account-chip">
-      <input type="checkbox" name="joinAccounts" value="${s}" checked> ${s}
-    </label>
-  `).join('');
+  joinSelect.innerHTML = sessions.map(s => `<label class="chip"><input type="checkbox" name="joinAccounts" value="${s}" checked> ${s}</label>`).join('');
 }
 
 function log(msg, type='info') {
@@ -267,8 +257,6 @@ document.getElementById('uploadForm').onsubmit = async (e) => {
     const result = await res.json();
     if (result.ok) {
       log('Hochgeladen: ' + result.name, 'success');
-      fileInput.value = '';
-      document.getElementById('fileName').textContent = '';
       loadSessions();
     } else log(result.error || 'Fehler', 'error');
   } catch(err) { log('Fehler: ' + err, 'error'); }
@@ -294,7 +282,6 @@ async function finishLogin() {
   if (data.ok) {
     log('Account hinzugefügt: ' + (data.name || phone), 'success');
     document.getElementById('codeArea').style.display = 'none';
-    document.getElementById('phone').value = '';
     loadSessions();
   } else log(data.error || 'Fehler', 'error');
 }
@@ -312,7 +299,7 @@ async function joinGroup() {
   const accounts = [...document.querySelectorAll('input[name="joinAccounts"]:checked')].map(i => i.value);
   if (!link) return alert('Link eingeben');
   if (!accounts.length) return alert('Account auswählen');
-  log('Joine Gruppe...', 'info');
+  log('Joine...', 'info');
   const res = await fetch('/join', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({link, accounts}) });
   const data = await res.json();
   data.results.forEach(r => log(r.message, r.ok ? 'success' : 'error'));
@@ -320,19 +307,18 @@ async function joinGroup() {
 
 async function loadGroups() {
   const checked = [...document.querySelectorAll('input[name="accounts"]:checked')].map(i => i.value);
-  if (!checked.length) return alert('Mindestens einen Account auswählen');
+  if (!checked.length) return alert('Account auswählen');
   log('Lade Gruppen...', 'info');
   const res = await fetch('/groups', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({accounts: checked}) });
   const data = await res.json();
   const list = document.getElementById('groupList');
   if (!data.groups || !data.groups.length) {
-    list.innerHTML = '<p style="color:#666;">Keine Gruppen gefunden</p>';
+    list.innerHTML = '<p style="color:#666;">Keine Gruppen</p>';
     return;
   }
   list.innerHTML = data.groups.map(g => `
-    <label class="group-item">
-      <input type="checkbox" name="groups" value="${g.id}">
-      ${g.title}
+    <label class="menu-item" style="margin-bottom:4px;">
+      <span><input type="checkbox" name="groups" value="${g.id}"> ${g.title}</span>
     </label>
   `).join('');
   log(data.groups.length + ' Gruppen geladen', 'success');
@@ -346,7 +332,7 @@ document.getElementById('sendForm').onsubmit = async (e) => {
   const groups = [...document.querySelectorAll('input[name="groups"]:checked')].map(i => i.value);
   const manual = document.getElementById('manualGroup').value.trim();
   if (!accounts.length) return alert('Account auswählen');
-  if (!groups.length && !manual) return alert('Gruppe auswählen oder manuell eingeben');
+  if (!groups.length && !manual) return alert('Gruppe auswählen');
   data.delete('accounts');
   data.delete('groups');
   accounts.forEach(a => data.append('accounts', a));
@@ -522,7 +508,15 @@ async def login_finish(request: Request):
     return {"ok": True, "name": me.first_name or phone}
 
 @app.post("/send")
-async def send(request: Request, caption: str = Form(""), delay: int = Form(8), file: UploadFile = File(None)):
+async def send(
+    request: Request,
+    caption: str = Form(""),
+    delay: int = Form(8),
+    rounds: int = Form(1),
+    round_delay: int = Form(30),
+    msg_delay: int = Form(2),
+    file: UploadFile = File(None)
+):
     if not check_auth(request):
         return JSONResponse({"results": [{"ok": False, "message": "unauthorized"}]}, status_code=401)
     form = await request.form()
@@ -538,25 +532,31 @@ async def send(request: Request, caption: str = Form(""), delay: int = Form(8), 
         with open(temp_path, "wb") as f:
             f.write(await file.read())
     results = []
-    for session_name in accounts:
-        try:
-            client = TelegramClient(str(SESSIONS_DIR / session_name), API_ID, API_HASH)
-            await client.start()
-            me = await client.get_me()
-            name = me.first_name or session_name
-            for target in targets:
-                try:
-                    if temp_path:
-                        await client.send_file(int(target) if str(target).lstrip('-').isdigit() else target, temp_path, caption=caption or None)
-                    elif caption:
-                        await client.send_message(int(target) if str(target).lstrip('-').isdigit() else target, caption)
-                    results.append({"ok": True, "message": f"[{name}] → {target} gesendet"})
-                except Exception as e:
-                    results.append({"ok": False, "message": f"[{name}] → {target}: {str(e)[:60]}"})
-            await client.disconnect()
-            await asyncio.sleep(delay)
-        except Exception as e:
-            results.append({"ok": False, "message": f"[{session_name}] {str(e)[:80]}"})
+    for r in range(rounds):
+        if rounds > 1:
+            results.append({"ok": True, "message": f"--- Runde {r+1}/{rounds} ---"})
+        for session_name in accounts:
+            try:
+                client = TelegramClient(str(SESSIONS_DIR / session_name), API_ID, API_HASH)
+                await client.start()
+                me = await client.get_me()
+                name = me.first_name or session_name
+                for target in targets:
+                    try:
+                        if temp_path:
+                            await client.send_file(int(target) if str(target).lstrip('-').isdigit() else target, temp_path, caption=caption or None)
+                        elif caption:
+                            await client.send_message(int(target) if str(target).lstrip('-').isdigit() else target, caption)
+                        results.append({"ok": True, "message": f"[{name}] → {target} gesendet"})
+                        await asyncio.sleep(msg_delay)
+                    except Exception as e:
+                        results.append({"ok": False, "message": f"[{name}] → {target}: {str(e)[:60]}"})
+                await client.disconnect()
+                await asyncio.sleep(delay)
+            except Exception as e:
+                results.append({"ok": False, "message": f"[{session_name}] {str(e)[:80]}"})
+        if r < rounds - 1:
+            await asyncio.sleep(round_delay)
     if temp_path and os.path.exists(temp_path):
         os.remove(temp_path)
     return {"results": results}
