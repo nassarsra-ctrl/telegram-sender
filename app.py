@@ -14,9 +14,8 @@ load_dotenv()
 API_ID = int(os.getenv("API_ID", "0"))
 API_HASH = os.getenv("API_HASH", "")
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "admin123")
-ADMIN_SECRET_PATH = os.getenv("ADMIN_SECRET_PATH", "admin-secret")  # geheime URL
 
-app = FastAPI(title="Telegram Multi Sender")
+app = FastAPI(title="Telegram Sender")
 
 SESSIONS_DIR = Path("sessions")
 SESSIONS_DIR.mkdir(exist_ok=True)
@@ -36,21 +35,27 @@ LOGIN_HTML = """
 <html lang="de">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Login</title>
 <style>
-body { font-family: system-ui, Arial; background:#0f1115; color:#e6e6e6; display:flex; align-items:center; justify-content:center; height:100vh; margin:0; }
-.box { background:#1a1d24; padding:40px; border-radius:16px; width:360px; text-align:center; }
-h1 { color:#5eead4; }
-input { width:100%; padding:12px; margin:10px 0; border-radius:8px; border:1px solid #333; background:#111; color:#fff; font-size:16px; box-sizing:border-box; }
-button { width:100%; padding:12px; background:#14b8a6; color:#000; font-weight:bold; border:none; border-radius:8px; cursor:pointer; font-size:16px; }
-.error { color:#f87171; margin-top:10px; }
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); min-height:100vh; display:flex; align-items:center; justify-content:center; color:#fff; }
+.login-box { background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border:1px solid rgba(255,255,255,0.1); padding:48px 40px; border-radius:24px; width:100%; max-width:400px; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,0.4); }
+h1 { font-size:32px; margin-bottom:8px; background: linear-gradient(90deg, #00d4ff, #7b2cbf); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+.subtitle { color:#aaa; margin-bottom:32px; font-size:15px; }
+input { width:100%; padding:14px 16px; margin:12px 0; border-radius:12px; border:1px solid rgba(255,255,255,0.15); background:rgba(0,0,0,0.3); color:#fff; font-size:16px; outline:none; transition:all 0.3s; }
+input:focus { border-color:#00d4ff; box-shadow:0 0 0 3px rgba(0,212,255,0.2); }
+button { width:100%; padding:14px; margin-top:8px; background: linear-gradient(90deg, #00d4ff, #7b2cbf); border:none; border-radius:12px; color:#fff; font-size:16px; font-weight:600; cursor:pointer; transition:transform 0.2s, box-shadow 0.2s; }
+button:hover { transform:translateY(-2px); box-shadow:0 10px 25px rgba(0,212,255,0.3); }
+.error { color:#ff6b6b; margin-top:16px; font-size:14px; }
 </style>
 </head>
 <body>
-<div class="box">
-  <h1>Login</h1>
+<div class="login-box">
+  <h1>Telegram Sender</h1>
+  <div class="subtitle">Admin Dashboard</div>
   <form method="post" action="/login">
-    <input type="password" name="password" placeholder="Passwort" required autofocus>
+    <input type="password" name="password" placeholder="Passwort eingeben" required autofocus>
     <button type="submit">Einloggen</button>
   </form>
   ERROR_PLACEHOLDER
@@ -64,92 +69,126 @@ DASHBOARD_HTML = """
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Dashboard</title>
 <style>
-body { font-family: system-ui, Arial; background:#0f1115; color:#e6e6e6; margin:0; padding:20px; }
-.container { max-width:800px; margin:0 auto; }
-h1 { color:#5eead4; }
-.verified { background:#065f46; color:#6ee7b7; padding:10px 16px; border-radius:8px; display:inline-block; margin-bottom:20px; }
-.nav { margin:20px 0; }
-.nav a { background:#1a1d24; color:#5eead4; padding:12px 24px; border-radius:8px; text-decoration:none; margin-right:10px; display:inline-block; }
-.nav a:hover { background:#222; }
-.logout { float:right; background:#dc2626; color:#fff; padding:8px 16px; border-radius:8px; text-decoration:none; }
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background:#0a0a0f; color:#e8e8e8; min-height:100vh; }
+.header { background: linear-gradient(90deg, #1a1a2e, #16213e); padding:20px 40px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); }
+.header h1 { font-size:24px; background: linear-gradient(90deg, #00d4ff, #a855f7); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+.logout { background:#ef4444; color:#fff; padding:10px 20px; border-radius:10px; text-decoration:none; font-weight:600; transition:background 0.2s; }
+.logout:hover { background:#dc2626; }
+.container { max-width:1100px; margin:0 auto; padding:30px 20px; }
+.grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+@media (max-width:800px) { .grid { grid-template-columns:1fr; } }
+.card { background:#12121a; border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:24px; }
+.card h2 { font-size:18px; margin-bottom:16px; color:#00d4ff; display:flex; align-items:center; gap:8px; }
+label { display:block; margin:12px 0 6px; font-weight:500; color:#ccc; font-size:14px; }
+input, textarea, select { width:100%; padding:12px 14px; border-radius:10px; border:1px solid rgba(255,255,255,0.1); background:#1a1a24; color:#fff; font-size:15px; outline:none; transition:border 0.2s; }
+input:focus, textarea:focus { border-color:#00d4ff; }
+textarea { resize:vertical; min-height:80px; }
+button { background: linear-gradient(90deg, #00d4ff, #7b2cbf); color:#fff; border:none; padding:12px 20px; border-radius:10px; font-weight:600; cursor:pointer; transition:transform 0.2s, opacity 0.2s; width:100%; margin-top:12px; }
+button:hover { transform:translateY(-1px); }
+button:disabled { opacity:0.6; cursor:not-allowed; }
+.accounts { display:flex; flex-wrap:wrap; gap:10px; margin-top:8px; }
+.account-chip { background:#1e1e2e; border:1px solid rgba(255,255,255,0.1); padding:8px 14px; border-radius:20px; display:flex; align-items:center; gap:8px; font-size:14px; }
+.account-chip input { width:auto; margin:0; }
+.account-list { max-height:200px; overflow-y:auto; }
+.session-item { background:#1a1a24; padding:12px 16px; border-radius:10px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; }
+.delete-btn { background:#ef4444; color:#fff; border:none; padding:6px 12px; border-radius:8px; cursor:pointer; font-size:13px; width:auto; }
+#log { background:#0d0d12; border-radius:10px; padding:16px; height:180px; overflow-y:auto; font-family:monospace; font-size:13px; line-height:1.5; }
+.success { color:#4ade80; }
+.error { color:#f87171; }
+.info { color:#60a5fa; }
+.verified { background: linear-gradient(90deg, #065f46, #047857); color:#6ee7b7; padding:6px 14px; border-radius:20px; font-size:13px; font-weight:600; }
 </style>
 </head>
 <body>
-<div class="container">
-  <a href="/logout" class="logout">Logout</a>
-  <h1>Dashboard</h1>
-  <div class="verified">Verifiziert ✓</div>
-  <div class="nav">
-    <a href="/sender">Sender</a>
+<div class="header">
+  <h1>Telegram Admin Dashboard</h1>
+  <div style="display:flex; align-items:center; gap:16px;">
+    <span class="verified">Verifiziert ✓</span>
+    <a href="/logout" class="logout">Logout</a>
   </div>
-  <p>Hier kannst du Nachrichten und Dateien senden.</p>
 </div>
-</body>
-</html>
-"""
 
-ADMIN_HTML = """
-<!DOCTYPE html>
-<html lang="de">
-<head>
-<meta charset="UTF-8">
-<title>Admin Panel – Sessions</title>
-<style>
-body { font-family: system-ui, Arial; background:#0f1115; color:#e6e6e6; margin:0; padding:20px; }
-.container { max-width:800px; margin:0 auto; }
-h1 { color:#5eead4; }
-.card { background:#1a1d24; padding:20px; border-radius:12px; margin-bottom:20px; }
-input, button { width:100%; padding:10px; border-radius:8px; border:1px solid #333; background:#111; color:#fff; margin-top:8px; box-sizing:border-box; }
-button { background:#14b8a6; color:#000; font-weight:bold; cursor:pointer; }
-.account { background:#222; padding:10px; border-radius:8px; margin:8px 0; display:flex; justify-content:space-between; align-items:center; }
-.delete { background:#dc2626; color:#fff; padding:6px 12px; border-radius:6px; border:none; cursor:pointer; width:auto; }
-.back { color:#5eead4; text-decoration:none; }
-#log { background:#111; padding:15px; border-radius:8px; height:150px; overflow:auto; font-family:monospace; }
-.success { color:#4ade80; } .error { color:#f87171; }
-</style>
-</head>
-<body>
 <div class="container">
-  <a href="/" class="back">← Zurück</a>
-  <h1>Admin Panel – Sessions</h1>
-
-  <div class="card">
-    <h3>Neuen Account hinzufügen</h3>
-    <input id="phone" placeholder="+491701234567">
-    <button onclick="startLogin()">Code anfordern</button>
-    <div id="codeArea" style="display:none; margin-top:10px;">
-      <input id="code" placeholder="Code aus Telegram">
-      <input id="password" placeholder="2FA Passwort (falls vorhanden)">
-      <button onclick="finishLogin()">Einloggen</button>
+  <div class="grid">
+    <!-- Account hinzufügen -->
+    <div class="card">
+      <h2>➕ Account hinzufügen</h2>
+      <input id="phone" placeholder="+49 170 1234567">
+      <button onclick="startLogin()">Code anfordern</button>
+      <div id="codeArea" style="display:none; margin-top:12px;">
+        <input id="code" placeholder="Code aus Telegram">
+        <input id="password" placeholder="2FA Passwort (optional)" style="margin-top:8px;">
+        <button onclick="finishLogin()">Einloggen</button>
+      </div>
     </div>
-  </div>
 
-  <div class="card">
-    <h3>Vorhandene Sessions</h3>
-    <div id="accountList"></div>
-  </div>
+    <!-- Sessions -->
+    <div class="card">
+      <h2>📱 Sessions</h2>
+      <div id="sessionList" class="account-list"></div>
+    </div>
 
-  <div class="card">
-    <div id="log">Bereit...</div>
+    <!-- Senden -->
+    <div class="card" style="grid-column:1 / -1;">
+      <h2>📤 Nachricht senden</h2>
+      <form id="sendForm">
+        <label>Accounts auswählen</label>
+        <div class="accounts" id="accountSelect"></div>
+        
+        <label>Gruppen-Link oder @username</label>
+        <input name="group" placeholder="https://t.me/gruppe oder @gruppe" required>
+        
+        <label>Datei (optional)</label>
+        <input type="file" name="file">
+        
+        <label>Text / Caption</label>
+        <textarea name="caption" placeholder="Nachricht..."></textarea>
+        
+        <label>Delay zwischen Accounts (Sekunden)</label>
+        <input type="number" name="delay" value="8" min="3" max="120">
+        
+        <button type="submit">Jetzt senden</button>
+      </form>
+    </div>
+
+    <!-- Log -->
+    <div class="card" style="grid-column:1 / -1;">
+      <h2>📋 Log</h2>
+      <div id="log">Bereit...</div>
+    </div>
   </div>
 </div>
 
 <script>
-async function loadAccounts() {
+async function loadSessions() {
   const res = await fetch('/sessions');
   const sessions = await res.json();
-  const container = document.getElementById('accountList');
+  
+  const list = document.getElementById('sessionList');
+  const select = document.getElementById('accountSelect');
+  
   if (!sessions.length) {
-    container.innerHTML = '<p>Keine Sessions vorhanden.</p>';
+    list.innerHTML = '<p style="color:#888;">Keine Sessions vorhanden</p>';
+    select.innerHTML = '<p style="color:#888;">Keine Accounts</p>';
     return;
   }
-  container.innerHTML = sessions.map(s => `
-    <div class="account">
+  
+  list.innerHTML = sessions.map(s => `
+    <div class="session-item">
       <span>${s}</span>
-      <button class="delete" onclick="deleteSession('${s}')">Löschen</button>
+      <button class="delete-btn" onclick="deleteSession('${s}')">Löschen</button>
     </div>
+  `).join('');
+  
+  select.innerHTML = sessions.map(s => `
+    <label class="account-chip">
+      <input type="checkbox" name="accounts" value="${s}" checked>
+      ${s}
+    </label>
   `).join('');
 }
 
@@ -170,7 +209,7 @@ async function startLogin() {
   const data = await res.json();
   if (data.ok) {
     document.getElementById('codeArea').style.display = 'block';
-    log('Code gesendet.', 'success');
+    log('Code gesendet an ' + phone, 'success');
   } else {
     log(data.error || 'Fehler', 'error');
   }
@@ -187,16 +226,17 @@ async function finishLogin() {
   });
   const data = await res.json();
   if (data.ok) {
-    log('Account hinzugefügt: ' + data.name, 'success');
+    log('Account hinzugefügt: ' + (data.name || phone), 'success');
     document.getElementById('codeArea').style.display = 'none';
-    loadAccounts();
+    document.getElementById('phone').value = '';
+    loadSessions();
   } else {
     log(data.error || 'Fehler', 'error');
   }
 }
 
 async function deleteSession(name) {
-  if (!confirm('Session wirklich löschen?')) return;
+  if (!confirm('Session "' + name + '" wirklich löschen?')) return;
   const res = await fetch('/session/delete', {
     method: 'POST',
     headers: {'Content-Type':'application/json'},
@@ -204,83 +244,13 @@ async function deleteSession(name) {
   });
   const data = await res.json();
   if (data.ok) {
-    log('Gelöscht: ' + name, 'success');
-    loadAccounts();
+    log('Session gelöscht: ' + name, 'success');
+    loadSessions();
   } else {
     log(data.error || 'Fehler', 'error');
   }
 }
 
-loadAccounts();
-</script>
-</body>
-</html>
-"""
-
-SENDER_HTML = """
-<!DOCTYPE html>
-<html lang="de">
-<head>
-<meta charset="UTF-8">
-<title>Sender</title>
-<style>
-body { font-family: system-ui, Arial; background:#0f1115; color:#e6e6e6; margin:0; padding:20px; }
-.container { max-width:800px; margin:0 auto; }
-h1 { color:#5eead4; }
-.card { background:#1a1d24; padding:20px; border-radius:12px; margin-bottom:20px; }
-label { display:block; margin:12px 0 6px; font-weight:600; }
-input, textarea, button { width:100%; padding:10px; border-radius:8px; border:1px solid #333; background:#111; color:#fff; box-sizing:border-box; }
-button { background:#14b8a6; color:#000; font-weight:bold; cursor:pointer; margin-top:10px; }
-.accounts { display:flex; flex-wrap:wrap; gap:10px; }
-.account-item { background:#222; padding:8px 14px; border-radius:20px; }
-#log { background:#111; padding:15px; border-radius:8px; height:200px; overflow:auto; font-family:monospace; }
-.success { color:#4ade80; } .error { color:#f87171; }
-.back { color:#5eead4; text-decoration:none; }
-</style>
-</head>
-<body>
-<div class="container">
-  <a href="/" class="back">← Zurück</a>
-  <h1>Sender</h1>
-  <div class="card">
-    <form id="sendForm">
-      <label>Accounts</label>
-      <div class="accounts" id="accountList"></div>
-      <label>Gruppen-Link</label>
-      <input name="group" placeholder="https://t.me/gruppe" required>
-      <label>Datei (optional)</label>
-      <input type="file" name="file">
-      <label>Text / Caption</label>
-      <textarea name="caption" rows="3"></textarea>
-      <label>Delay (Sekunden)</label>
-      <input type="number" name="delay" value="8" min="3">
-      <button type="submit">Senden</button>
-    </form>
-  </div>
-  <div class="card">
-    <div id="log">Bereit...</div>
-  </div>
-</div>
-<script>
-async function loadAccounts() {
-  const res = await fetch('/sessions');
-  const sessions = await res.json();
-  const container = document.getElementById('accountList');
-  if (!sessions.length) {
-    container.innerHTML = '<p>Keine Accounts vorhanden.</p>';
-    return;
-  }
-  container.innerHTML = sessions.map(s => `
-    <label class="account-item">
-      <input type="checkbox" name="accounts" value="${s}" checked> ${s}
-    </label>
-  `).join('');
-}
-function log(msg, type='info') {
-  const el = document.getElementById('log');
-  el.innerHTML += `<div class="${type}">${msg}</div>`;
-  el.scrollTop = el.scrollHeight;
-}
 document.getElementById('sendForm').onsubmit = async (e) => {
   e.preventDefault();
   const form = e.target;
@@ -289,17 +259,25 @@ document.getElementById('sendForm').onsubmit = async (e) => {
   if (!checked.length) return alert('Mindestens einen Account auswählen');
   data.delete('accounts');
   checked.forEach(a => data.append('accounts', a));
-  log('Sende...', 'info');
+  
+  log('Starte Senden an ' + checked.length + ' Account(s)...', 'info');
   const btn = form.querySelector('button');
   btn.disabled = true;
+  btn.textContent = 'Sende...';
+  
   try {
     const res = await fetch('/send', {method:'POST', body:data});
     const result = await res.json();
     result.results.forEach(r => log(r.message, r.ok ? 'success' : 'error'));
-  } catch(err) { log('Fehler: '+err, 'error'); }
+  } catch(err) {
+    log('Fehler: ' + err, 'error');
+  }
+  
   btn.disabled = false;
+  btn.textContent = 'Jetzt senden';
 };
-loadAccounts();
+
+loadSessions();
 </script>
 </body>
 </html>
@@ -336,18 +314,6 @@ async def logout(request: Request):
     response = RedirectResponse("/login")
     response.delete_cookie("auth_token")
     return response
-
-@app.get(f"/{ADMIN_SECRET_PATH}", response_class=HTMLResponse)
-async def admin(request: Request):
-    if not check_auth(request):
-        return RedirectResponse("/login")
-    return HTMLResponse(ADMIN_HTML)
-
-@app.get("/sender", response_class=HTMLResponse)
-async def sender(request: Request):
-    if not check_auth(request):
-        return RedirectResponse("/login")
-    return HTMLResponse(SENDER_HTML)
 
 @app.get("/sessions")
 async def sessions(request: Request):
@@ -448,5 +414,4 @@ async def send(request: Request, group: str = Form(...), caption: str = Form("")
 if __name__ == "__main__":
     print("Starte auf http://0.0.0.0:8000")
     print(f"Passwort: {ADMIN_PASSWORD}")
-    print(f"Admin URL: /{ADMIN_SECRET_PATH}")
     uvicorn.run(app, host="0.0.0.0", port=8000)
