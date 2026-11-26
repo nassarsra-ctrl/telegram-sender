@@ -42,22 +42,25 @@ LOGIN_HTML = """
 <title>Login</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
-body { font-family: system-ui, -apple-system, sans-serif; background:#05050a; min-height:100vh; display:flex; align-items:center; justify-content:center; color:#fff; padding:16px; }
-.login-box { background: linear-gradient(145deg, #12121c, #1a1a28); border:1px solid rgba(255,255,255,0.08); padding:48px 32px; border-radius:28px; width:100%; max-width:420px; text-align:center; box-shadow:0 30px 80px rgba(0,0,0,0.6); }
-h1 { font-size:32px; margin-bottom:6px; background: linear-gradient(90deg, #00f5ff, #b24bf3); -webkit-background-clip:text; -webkit-text-fill-color:transparent; font-weight:800; }
-.subtitle { color:#888; margin-bottom:32px; font-size:15px; }
-input { width:100%; padding:16px; margin:12px 0; border-radius:14px; border:1px solid rgba(255,255,255,0.1); background:#0d0d14; color:#fff; font-size:16px; outline:none; }
-input:focus { border-color:#00f5ff; }
-button { width:100%; padding:16px; margin-top:8px; background: linear-gradient(90deg, #00f5ff, #b24bf3); border:none; border-radius:14px; color:#000; font-size:16px; font-weight:700; cursor:pointer; }
+body { font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif; background:#05050a; min-height:100vh; display:flex; align-items:center; justify-content:center; color:#fff; padding:20px; }
+.login-box { background: linear-gradient(160deg, #111118 0%, #1a1a28 100%); border:1px solid rgba(255,255,255,0.08); padding:48px 36px; border-radius:32px; width:100%; max-width:420px; text-align:center; box-shadow:0 40px 100px rgba(0,0,0,0.7); }
+.logo { font-size:42px; margin-bottom:8px; }
+h1 { font-size:28px; margin-bottom:4px; background: linear-gradient(90deg, #00f5ff, #b24bf3); -webkit-background-clip:text; -webkit-text-fill-color:transparent; font-weight:800; letter-spacing:-0.5px; }
+.subtitle { color:#777; margin-bottom:36px; font-size:15px; }
+input { width:100%; padding:16px 18px; margin:10px 0; border-radius:16px; border:1px solid rgba(255,255,255,0.1); background:#0a0a10; color:#fff; font-size:16px; outline:none; transition:all 0.2s; }
+input:focus { border-color:#00f5ff; box-shadow:0 0 0 4px rgba(0,245,255,0.15); }
+button { width:100%; padding:16px; margin-top:12px; background: linear-gradient(90deg, #00f5ff, #b24bf3); border:none; border-radius:16px; color:#000; font-size:16px; font-weight:700; cursor:pointer; transition:transform 0.15s; }
+button:hover { transform:translateY(-1px); }
 .error { color:#ff5555; margin-top:16px; font-size:14px; }
 </style>
 </head>
 <body>
 <div class="login-box">
+  <div class="logo">⚡</div>
   <h1>Telegram</h1>
   <div class="subtitle">Admin Dashboard</div>
   <form method="post" action="/login">
-    <input type="password" name="password" placeholder="Passwort" required autofocus>
+    <input type="password" name="password" placeholder="Passwort eingeben" required autofocus>
     <button type="submit">Einloggen</button>
   </form>
   ERROR_PLACEHOLDER
@@ -72,49 +75,55 @@ DASHBOARD_HTML = """
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin Dashboard</title>
+<title>Dashboard</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
-body { font-family: system-ui, -apple-system, sans-serif; background:#05050a; color:#eee; min-height:100vh; }
-.header { background: linear-gradient(90deg, #0d0d14, #151520); padding:16px 20px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.06); position:sticky; top:0; z-index:100; }
-.header h1 { font-size:22px; background: linear-gradient(90deg, #00f5ff, #b24bf3); -webkit-background-clip:text; -webkit-text-fill-color:transparent; font-weight:800; }
+body { font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif; background:#05050a; color:#eee; min-height:100vh; }
+.header { background: linear-gradient(90deg, #0c0c14, #141420); padding:16px 20px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.06); position:sticky; top:0; z-index:100; backdrop-filter:blur(12px); }
+.header h1 { font-size:20px; background: linear-gradient(90deg, #00f5ff, #b24bf3); -webkit-background-clip:text; -webkit-text-fill-color:transparent; font-weight:800; }
 .header-right { display:flex; align-items:center; gap:10px; }
 .verified { background: linear-gradient(90deg, #065f46, #047857); color:#6ee7b7; padding:6px 12px; border-radius:20px; font-size:12px; font-weight:700; }
-.logout { background:#ef4444; color:#fff; padding:8px 16px; border-radius:12px; text-decoration:none; font-weight:700; font-size:14px; }
-.container { max-width:960px; margin:0 auto; padding:16px; }
-.card { background: linear-gradient(145deg, #101018, #161620); border:1px solid rgba(255,255,255,0.06); border-radius:20px; padding:20px; margin-bottom:16px; }
-.card h2 { font-size:18px; margin-bottom:14px; color:#00f5ff; font-weight:700; }
-label { display:block; margin:12px 0 6px; font-weight:600; color:#ccc; font-size:14px; }
-input, textarea { width:100%; padding:14px; border-radius:12px; border:1px solid rgba(255,255,255,0.08); background:#0d0d14; color:#fff; font-size:15px; outline:none; }
+.logout { background:#ef4444; color:#fff; padding:8px 14px; border-radius:12px; text-decoration:none; font-weight:700; font-size:13px; }
+.container { max-width:900px; margin:0 auto; padding:16px; }
+.tabs { display:flex; gap:8px; margin-bottom:16px; overflow-x:auto; padding-bottom:4px; }
+.tab { background:#12121c; border:1px solid rgba(255,255,255,0.08); color:#aaa; padding:10px 18px; border-radius:14px; cursor:pointer; font-weight:600; font-size:14px; white-space:nowrap; transition:all 0.2s; }
+.tab.active { background: linear-gradient(90deg, #00f5ff, #b24bf3); color:#000; border-color:transparent; }
+.panel { display:none; }
+.panel.active { display:block; }
+.card { background: linear-gradient(160deg, #101018, #161620); border:1px solid rgba(255,255,255,0.06); border-radius:20px; padding:20px; margin-bottom:14px; }
+.card h2 { font-size:17px; margin-bottom:14px; color:#00f5ff; font-weight:700; }
+label { display:block; margin:12px 0 6px; font-weight:600; color:#ccc; font-size:13px; }
+input, textarea { width:100%; padding:14px; border-radius:14px; border:1px solid rgba(255,255,255,0.08); background:#0a0a10; color:#fff; font-size:15px; outline:none; }
 input:focus, textarea:focus { border-color:#00f5ff; }
 textarea { resize:vertical; min-height:70px; }
-button { background: linear-gradient(90deg, #00f5ff, #b24bf3); color:#000; border:none; padding:14px; border-radius:12px; font-weight:700; cursor:pointer; width:100%; margin-top:10px; font-size:15px; }
+button { background: linear-gradient(90deg, #00f5ff, #b24bf3); color:#000; border:none; padding:14px; border-radius:14px; font-weight:700; cursor:pointer; width:100%; margin-top:10px; font-size:15px; }
 button:disabled { opacity:0.5; }
 .secondary { background:#1e1e2e; color:#fff; }
 .accounts { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
 .account-chip { background:#1a1a28; border:1px solid rgba(255,255,255,0.08); padding:10px 14px; border-radius:24px; display:flex; align-items:center; gap:8px; font-size:14px; }
 .account-chip input { width:auto; margin:0; }
-.session-item { background:#14141e; padding:12px 14px; border-radius:12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; }
-.delete-btn { background:#ef4444; color:#fff; border:none; padding:6px 12px; border-radius:8px; cursor:pointer; font-size:13px; width:auto; margin:0; }
-.groups { max-height:280px; overflow-y:auto; margin-top:8px; }
-.group-item { background:#14141e; padding:12px 14px; border-radius:12px; margin-bottom:6px; display:flex; align-items:center; gap:10px; }
+.session-item { background:#14141e; padding:12px 14px; border-radius:14px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; }
+.delete-btn { background:#ef4444; color:#fff; border:none; padding:6px 12px; border-radius:10px; cursor:pointer; font-size:13px; width:auto; margin:0; }
+.groups { max-height:260px; overflow-y:auto; margin-top:8px; }
+.group-item { background:#14141e; padding:12px 14px; border-radius:14px; margin-bottom:6px; display:flex; align-items:center; gap:10px; }
 .group-item input { width:auto; }
-#log { background:#0a0a10; border-radius:12px; padding:14px; height:160px; overflow-y:auto; font-family:monospace; font-size:13px; }
+#log { background:#0a0a10; border-radius:14px; padding:14px; height:150px; overflow-y:auto; font-family:monospace; font-size:13px; }
 .success { color:#4ade80; }
 .error { color:#f87171; }
 .info { color:#60a5fa; }
-.file-upload { border:2px dashed rgba(255,255,255,0.12); border-radius:14px; padding:24px; text-align:center; }
+.file-upload { border:2px dashed rgba(255,255,255,0.12); border-radius:16px; padding:28px; text-align:center; }
 .file-upload input { display:none; }
 .file-upload label { color:#00f5ff; cursor:pointer; font-weight:700; }
 @media (max-width:480px) {
   .verified { display:none; }
   .header h1 { font-size:18px; }
+  .tab { padding:8px 14px; font-size:13px; }
 }
 </style>
 </head>
 <body>
 <div class="header">
-  <h1>Telegram Dashboard</h1>
+  <h1>⚡ Telegram</h1>
   <div class="header-right">
     <span class="verified">Verifiziert ✓</span>
     <a href="/logout" class="logout">Logout</a>
@@ -122,75 +131,89 @@ button:disabled { opacity:0.5; }
 </div>
 
 <div class="container">
-  <div class="card">
-    <h2>📁 Session hochladen</h2>
-    <form id="uploadForm">
-      <div class="file-upload">
-        <input type="file" id="sessionFile" accept=".session">
-        <label for="sessionFile">.session Datei auswählen</label>
-        <div id="fileName" style="margin-top:8px; color:#888; font-size:13px;"></div>
-      </div>
-      <button type="submit">Hochladen</button>
-    </form>
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('sessions')">Sessions</div>
+    <div class="tab" onclick="switchTab('join')">Joinen</div>
+    <div class="tab" onclick="switchTab('send')">Senden</div>
+    <div class="tab" onclick="switchTab('log')">Log</div>
   </div>
 
-  <div class="card">
-    <h2>➕ Account per Telefon</h2>
-    <input id="phone" placeholder="+49 170 1234567">
-    <button onclick="startLogin()">Code anfordern</button>
-    <div id="codeArea" style="display:none; margin-top:12px;">
-      <input id="code" placeholder="Code">
-      <input id="password" placeholder="2FA (optional)" style="margin-top:8px;">
-      <button onclick="finishLogin()">Einloggen</button>
+  <div id="sessions" class="panel active">
+    <div class="card">
+      <h2>📁 Session hochladen</h2>
+      <form id="uploadForm">
+        <div class="file-upload">
+          <input type="file" id="sessionFile" accept=".session">
+          <label for="sessionFile">.session Datei auswählen</label>
+          <div id="fileName" style="margin-top:8px; color:#888; font-size:13px;"></div>
+        </div>
+        <button type="submit">Hochladen</button>
+      </form>
+    </div>
+    <div class="card">
+      <h2>➕ Account per Telefon</h2>
+      <input id="phone" placeholder="+49 170 1234567">
+      <button onclick="startLogin()">Code anfordern</button>
+      <div id="codeArea" style="display:none; margin-top:12px;">
+        <input id="code" placeholder="Code">
+        <input id="password" placeholder="2FA (optional)" style="margin-top:8px;">
+        <button onclick="finishLogin()">Einloggen</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>📱 Sessions</h2>
+      <div id="sessionList"></div>
     </div>
   </div>
 
-  <div class="card">
-    <h2>📱 Sessions</h2>
-    <div id="sessionList"></div>
-  </div>
-
-  <div class="card">
-    <h2>🔗 In Gruppe joinen</h2>
-    <label>Accounts</label>
-    <div class="accounts" id="joinAccountSelect"></div>
-    <label>Gruppen-Link</label>
-    <input id="joinLink" placeholder="https://t.me/gruppe oder https://t.me/+invite">
-    <button onclick="joinGroup()">Joinen</button>
-  </div>
-
-  <div class="card">
-    <h2>📤 Senden</h2>
-    <form id="sendForm">
+  <div id="join" class="panel">
+    <div class="card">
+      <h2>🔗 In Gruppe joinen</h2>
       <label>Accounts</label>
-      <div class="accounts" id="accountSelect"></div>
-
-      <button type="button" class="secondary" onclick="loadGroups()">Gruppen laden</button>
-      <div class="groups" id="groupList"></div>
-
-      <label>Oder manuell eingeben</label>
-      <input name="group" id="manualGroup" placeholder="https://t.me/gruppe oder @gruppe">
-
-      <label>Datei (optional)</label>
-      <input type="file" name="file">
-
-      <label>Text / Caption</label>
-      <textarea name="caption" placeholder="Nachricht..."></textarea>
-
-      <label>Delay (Sekunden)</label>
-      <input type="number" name="delay" value="8" min="3">
-
-      <button type="submit">Senden</button>
-    </form>
+      <div class="accounts" id="joinAccountSelect"></div>
+      <label>Gruppen-Link</label>
+      <input id="joinLink" placeholder="https://t.me/gruppe oder https://t.me/+invite">
+      <button onclick="joinGroup()">Joinen</button>
+    </div>
   </div>
 
-  <div class="card">
-    <h2>📋 Log</h2>
-    <div id="log">Bereit...</div>
+  <div id="send" class="panel">
+    <div class="card">
+      <h2>📤 Nachricht senden</h2>
+      <form id="sendForm">
+        <label>Accounts</label>
+        <div class="accounts" id="accountSelect"></div>
+        <button type="button" class="secondary" onclick="loadGroups()">Gruppen laden</button>
+        <div class="groups" id="groupList"></div>
+        <label>Oder manuell eingeben</label>
+        <input name="group" id="manualGroup" placeholder="https://t.me/gruppe oder @gruppe">
+        <label>Datei (optional)</label>
+        <input type="file" name="file">
+        <label>Text / Caption</label>
+        <textarea name="caption" placeholder="Nachricht..."></textarea>
+        <label>Delay (Sekunden)</label>
+        <input type="number" name="delay" value="8" min="3">
+        <button type="submit">Senden</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="log" class="panel">
+    <div class="card">
+      <h2>📋 Log</h2>
+      <div id="log">Bereit...</div>
+    </div>
   </div>
 </div>
 
 <script>
+function switchTab(id) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById(id).classList.add('active');
+}
+
 document.getElementById('sessionFile').onchange = function() {
   document.getElementById('fileName').textContent = this.files[0] ? this.files[0].name : '';
 };
@@ -322,16 +345,13 @@ document.getElementById('sendForm').onsubmit = async (e) => {
   const accounts = [...document.querySelectorAll('input[name="accounts"]:checked')].map(i => i.value);
   const groups = [...document.querySelectorAll('input[name="groups"]:checked')].map(i => i.value);
   const manual = document.getElementById('manualGroup').value.trim();
-  
   if (!accounts.length) return alert('Account auswählen');
   if (!groups.length && !manual) return alert('Gruppe auswählen oder manuell eingeben');
-  
   data.delete('accounts');
   data.delete('groups');
   accounts.forEach(a => data.append('accounts', a));
   groups.forEach(g => data.append('groups', g));
   if (manual) data.append('manual', manual);
-  
   log('Sende...', 'info');
   const btn = form.querySelector('button[type=submit]');
   btn.disabled = true;
