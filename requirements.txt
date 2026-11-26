@@ -3,3 +3,5 @@ uvicorn[standard]
 python-multipart
 telethon
 python-dotenv
+python-telegram-bot==21.7
+python-dotenv
