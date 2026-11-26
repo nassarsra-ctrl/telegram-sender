@@ -1,39 +1,75 @@
 import asyncio
 import os
 import tempfile
+import secrets
 from pathlib import Path
 from telethon import TelegramClient
 from telethon.errors import FloodWaitError, SessionPasswordNeededError
-from fastapi import FastAPI, UploadFile, File, Form, Request
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi import FastAPI, UploadFile, File, Form, Request, Response
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 import uvicorn
 from dotenv import load_dotenv
 
 load_dotenv()
 API_ID = int(os.getenv("API_ID", "0"))
 API_HASH = os.getenv("API_HASH", "")
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "admin123")  # Ändere das!
 
 app = FastAPI(title="Telegram Multi Sender")
 
 SESSIONS_DIR = Path("sessions")
 SESSIONS_DIR.mkdir(exist_ok=True)
 
-# Temporary clients for login
 login_clients = {}
+sessions_tokens = {}  # simple session tokens
 
 def get_sessions():
     return sorted([f.stem for f in SESSIONS_DIR.glob("*.session") if not f.name.endswith(".session-journal")])
 
-HTML = """
+def check_auth(request: Request):
+    token = request.cookies.get("auth_token")
+    return token in sessions_tokens
+
+LOGIN_HTML = """
 <!DOCTYPE html>
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>Telegram Multi Sender</title>
+<title>Login – Telegram Sender</title>
+<style>
+body { font-family: system-ui, Arial; background:#0f1115; color:#e6e6e6; display:flex; align-items:center; justify-content:center; height:100vh; margin:0; }
+.box { background:#1a1d24; padding:40px; border-radius:16px; width:360px; text-align:center; box-shadow:0 8px 30px rgba(0,0,0,.5); }
+h1 { color:#5eead4; margin-bottom:24px; }
+input { width:100%; padding:12px; margin:10px 0; border-radius:8px; border:1px solid #333; background:#111; color:#fff; font-size:16px; box-sizing:border-box; }
+button { width:100%; padding:12px; background:#14b8a6; color:#000; font-weight:bold; border:none; border-radius:8px; cursor:pointer; font-size:16px; }
+button:hover { background:#0d9488; }
+.error { color:#f87171; margin-top:10px; }
+</style>
+</head>
+<body>
+<div class="box">
+  <h1>Admin Login</h1>
+  <form method="post" action="/login">
+    <input type="password" name="password" placeholder="Passwort" required autofocus>
+    <button type="submit">Einloggen</button>
+  </form>
+  {% if error %}<div class="error">{{ error }}</div>{% endif %}
+</div>
+</body>
+</html>
+"""
+
+PANEL_HTML = """
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>Admin Panel – Telegram Sender</title>
 <style>
 body { font-family: system-ui, Arial, sans-serif; background:#0f1115; color:#e6e6e6; margin:0; padding:20px; }
-.container { max-width:800px; margin:0 auto; }
+.container { max-width:900px; margin:0 auto; }
 h1 { color:#5eead4; }
+.verified { background:#065f46; color:#6ee7b7; padding:10px 16px; border-radius:8px; display:inline-block; margin-bottom:20px; font-weight:bold; }
 .card { background:#1a1d24; padding:20px; border-radius:12px; margin-bottom:20px; }
 label { display:block; margin:12px 0 6px; font-weight:600; }
 input, textarea, button { width:100%; padding:10px; border-radius:8px; border:1px solid #333; background:#111; color:#fff; font-size:15px; box-sizing:border-box; }
@@ -41,13 +77,16 @@ button { background:#14b8a6; color:#000; font-weight:bold; cursor:pointer; margi
 button:hover { background:#0d9488; }
 .accounts { display:flex; flex-wrap:wrap; gap:10px; }
 .account-item { background:#222; padding:8px 14px; border-radius:20px; }
-#log { background:#111; padding:15px; border-radius:8px; height:200px; overflow:auto; font-family:monospace; white-space:pre-wrap; }
+#log { background:#111; padding:15px; border-radius:8px; height:220px; overflow:auto; font-family:monospace; white-space:pre-wrap; }
 .success { color:#4ade80; } .error { color:#f87171; } .info { color:#60a5fa; }
+.logout { float:right; background:#dc2626; color:#fff; padding:8px 16px; border-radius:8px; text-decoration:none; }
 </style>
 </head>
 <body>
 <div class="container">
+  <a href="/logout" class="logout">Logout</a>
   <h1>Telegram Multi Sender</h1>
+  <div class="verified">Verifiziert ✓</div>
 
   <div class="card">
     <h3>Account hinzufügen</h3>
@@ -114,7 +153,7 @@ async function startLogin() {
   const data = await res.json();
   if (data.ok) {
     document.getElementById('codeArea').style.display = 'block';
-    log('Code wurde gesendet. Schau in Telegram.', 'success');
+    log('Code wurde gesendet.', 'success');
   } else {
     log(data.error || 'Fehler', 'error');
   }
@@ -165,15 +204,48 @@ loadAccounts();
 """
 
 @app.get("/", response_class=HTMLResponse)
-async def home():
-    return HTML
+async def root(request: Request):
+    if not check_auth(request):
+        return RedirectResponse("/login")
+    return HTMLResponse(PANEL_HTML)
+
+@app.get("/login", response_class=HTMLResponse)
+async def login_page(request: Request, error: str = ""):
+    if check_auth(request):
+        return RedirectResponse("/")
+    html = LOGIN_HTML.replace("{% if error %}<div class=\"error\">{{ error }}</div>{% endif %}", 
+                              f'<div class="error">{error}</div>' if error else "")
+    return HTMLResponse(html)
+
+@app.post("/login")
+async def login(request: Request, password: str = Form(...)):
+    if password == ADMIN_PASSWORD:
+        token = secrets.token_urlsafe(32)
+        sessions_tokens[token] = True
+        response = RedirectResponse("/", status_code=303)
+        response.set_cookie("auth_token", token, httponly=True, max_age=86400*7)
+        return response
+    return RedirectResponse("/login?error=Falsches Passwort", status_code=303)
+
+@app.get("/logout")
+async def logout(request: Request):
+    token = request.cookies.get("auth_token")
+    if token in sessions_tokens:
+        sessions_tokens.pop(token, None)
+    response = RedirectResponse("/login")
+    response.delete_cookie("auth_token")
+    return response
 
 @app.get("/sessions")
-async def sessions():
+async def sessions(request: Request):
+    if not check_auth(request):
+        return JSONResponse({"error": "unauthorized"}, status_code=401)
     return get_sessions()
 
 @app.post("/login/start")
 async def login_start(request: Request):
+    if not check_auth(request):
+        return JSONResponse({"ok": False, "error": "unauthorized"}, status_code=401)
     data = await request.json()
     phone = data.get("phone", "").strip()
     if not phone:
@@ -190,6 +262,8 @@ async def login_start(request: Request):
 
 @app.post("/login/finish")
 async def login_finish(request: Request):
+    if not check_auth(request):
+        return JSONResponse({"ok": False, "error": "unauthorized"}, status_code=401)
     data = await request.json()
     phone = data.get("phone", "").strip()
     code = data.get("code", "").strip()
@@ -212,6 +286,8 @@ async def login_finish(request: Request):
 
 @app.post("/send")
 async def send(request: Request, group: str = Form(...), caption: str = Form(""), delay: int = Form(8), file: UploadFile = File(None)):
+    if not check_auth(request):
+        return JSONResponse({"results": [{"ok": False, "message": "unauthorized"}]}, status_code=401)
     form = await request.form()
     accounts = form.getlist("accounts")
     if not accounts:
@@ -246,4 +322,5 @@ async def send(request: Request, group: str = Form(...), caption: str = Form("")
 
 if __name__ == "__main__":
     print("Starte auf http://0.0.0.0:8000")
+    print(f"Admin Passwort: {ADMIN_PASSWORD}")
     uvicorn.run(app, host="0.0.0.0", port=8000)
