@@ -6,8 +6,8 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 from dotenv import load_dotenv
 
 load_dotenv()
-BOT_TOKEN = os.getenv("BOT_TOKEN", "")
-MINI_APP_URL = os.getenv("MINI_APP_URL", "https://deine-render-url.onrender.com/verify")
+BOT_TOKEN = os.getenv("BOT_TOKEN", "9036646897:AAEUxlHmqkA5uZdxwzCzO8JIVLyGgiby67E")
+MINI_APP_URL = os.getenv("MINI_APP_URL", "https://telegram-sender-cz75.onrender.com/verify")
 GIF_URL = os.getenv("GIF_URL", "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/main/Smileys/Robot.webp")
 
 logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
