@@ -74,7 +74,7 @@ body { font-family: system-ui, -apple-system, sans-serif; background:#0a0a12; mi
 </style>
 </head>
 <body>
-<div class="bg" id="bg" style="background-image:url('/static/bg.jpg?t=' + Date.now());"></div>
+<div class="bg" id="bg" style="background-image:url('https://raw.githubusercontent.com/nassarsra-ctrl/telegram-sender/main/photo_4920629441759743341_y.jpg');"></div>
 <div id="ageScreen" class="screen">
   <div class="age-box">
     <div class="age-icon">🔞</div>
