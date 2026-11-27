@@ -6,9 +6,10 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 from dotenv import load_dotenv
 
 load_dotenv()
-BOT_TOKEN = os.getenv("BOT_TOKEN", "9036646897:AAEUxlHmqkA5uZdxwzCzO8JIVLyGgiby67E")
-MINI_APP_URL = os.getenv("MINI_APP_URL", "https://telegram-sender-cz75.onrender.com/verify")
-GIF_URL = os.getenv("GIF_URL", "https://raw.githubusercontent.com/nassarsra-ctrl/telegram-sender/main/Robot.gif")
+BOT_TOKEN = os.getenv("BOT_TOKEN", "")
+MINI_APP_URL = os.getenv("MINI_APP_URL", "https://deine-render-url.onrender.com/verify")
+ADMIN_URL = os.getenv("ADMIN_URL", "https://deine-render-url.onrender.com")
+GIF_URL = os.getenv("GIF_URL", "")
 
 logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
 
@@ -21,6 +22,11 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_animation(animation=GIF_URL, caption=text, reply_markup=reply_markup)
     else:
         await update.message.reply_text(text, reply_markup=reply_markup)
+
+async def admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    keyboard = [[InlineKeyboardButton("⚙️ Admin Panel", web_app=WebAppInfo(url=ADMIN_URL))]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await update.message.reply_text("Admin Panel öffnen:", reply_markup=reply_markup)
 
 async def contact_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     contact = update.message.contact
