@@ -315,6 +315,12 @@ button.success { background:#10b981; }
 
 </div>
 <script>
+function toggleAccounts(id) {
+  const el = document.getElementById(id);
+  if (el) {
+    el.style.display = (el.style.display === 'none' || el.style.display === '') ? 'flex' : 'none';
+  }
+}
 function log(msg, type='info') {
   const el = document.getElementById('log');
   el.innerHTML = `<div class="${type}">${new Date().toLocaleTimeString()} - ${msg}</div>` + el.innerHTML;
