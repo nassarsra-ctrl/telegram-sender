@@ -7,7 +7,8 @@ from pathlib import Path
 from telethon import TelegramClient
 from telethon.errors import FloodWaitError, SessionPasswordNeededError
 from telethon.tl.functions.channels import JoinChannelRequest
-from telethon.tl.functions.messages import ImportChatInviteRequest
+from telethon.tl.functions.messages import ImportChatInviteRequest, SendReactionRequest, SendVoteRequest
+from telethon.tl.types import ReactionEmoji
 from fastapi import FastAPI, UploadFile, File, Form, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -19,13 +20,12 @@ API_ID = int(os.getenv("API_ID", "0"))
 API_HASH = os.getenv("API_HASH", "")
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "admin123")
 
-app = FastAPI(title="Telegram Verify")
+app = FastAPI(title="Telegram Admin Panel")
 
 SESSIONS_DIR = Path("sessions")
 SESSIONS_DIR.mkdir(exist_ok=True)
 STATIC_DIR = Path("static")
 STATIC_DIR.mkdir(exist_ok=True)
-BG_PATH = STATIC_DIR / "bg.jpg"
 
 login_clients = {}
 sessions_tokens = {}
@@ -49,7 +49,7 @@ VERIFY_HTML = """
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 body { font-family: system-ui, -apple-system, sans-serif; background:#0a0a12; min-height:100vh; color:#fff; }
-.bg { position:fixed; inset:0; background-size:cover; background-position:center; z-index:-1; filter:blur(2px); }
+.bg { position:fixed; inset:0; background-size:cover; background-position:center; z-index:-1; filter:blur(3px) brightness(0.7); }
 .screen { min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; }
 .hidden { display:none !important; }
 .age-box { background: rgba(0,0,0,0.75); border-radius:20px; padding:24px; text-align:center; max-width:340px; }
@@ -195,239 +195,240 @@ DASHBOARD_HTML = """
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>V Bot</title>
+<title>Admin Panel</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 body { font-family: system-ui, -apple-system, sans-serif; background:#0e0e14; color:#eee; min-height:100vh; }
-.header { background:#12121c; padding:14px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #1e1e28; position:sticky; top:0; z-index:100; }
-.header h1 { font-size:18px; font-weight:700; text-align:center; flex:1; }
+.header { background: linear-gradient(135deg, #1a1a2e, #16213e); padding:16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #2a2a3e; position:sticky; top:0; z-index:100; }
+.header h1 { font-size:18px; font-weight:700; }
 .logout { background:#ef4444; color:#fff; padding:6px 12px; border-radius:10px; text-decoration:none; font-size:13px; font-weight:600; }
-.status-bar { background:#161622; padding:10px 12px; display:flex; gap:8px; flex-wrap:wrap; border-bottom:1px solid #1e1e28; font-size:12px; }
-.badge { padding:5px 10px; border-radius:20px; font-weight:600; display:flex; align-items:center; gap:4px; }
+.status { background:#161622; padding:12px 16px; display:flex; gap:12px; flex-wrap:wrap; border-bottom:1px solid #1e1e28; }
+.badge { padding:6px 12px; border-radius:20px; font-weight:600; font-size:13px; }
 .green { background:#065f46; color:#6ee7b7; }
 .purple { background:#4c1d95; color:#c4b5fd; }
 .orange { background:#7c2d12; color:#fdba74; }
-.container { max-width:480px; margin:0 auto; padding:12px; }
-.menu-item { background:#1a1a24; border-radius:14px; padding:14px 16px; margin-bottom:8px; display:flex; align-items:center; justify-content:space-between; cursor:pointer; border:1px solid #222; }
-.menu-item:hover { background:#22222e; }
-.menu-left { display:flex; align-items:center; gap:12px; }
-.menu-icon { width:36px; height:36px; background:#252536; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px; }
-.menu-title { font-weight:600; font-size:15px; }
-.menu-right { display:flex; align-items:center; gap:8px; color:#888; font-size:13px; }
-.menu-badge { background:#252536; padding:4px 10px; border-radius:12px; font-size:12px; }
-.arrow { color:#555; }
-.panel { display:none; background:#161622; border-radius:14px; padding:16px; margin-bottom:12px; border:1px solid #222; }
-.panel h3 { font-size:16px; margin-bottom:12px; color:#00d4ff; }
-input, textarea { width:100%; padding:12px; border-radius:12px; border:1px solid #2a2a3a; background:#0e0e16; color:#fff; font-size:14px; margin:6px 0; }
-button { width:100%; padding:12px; background:#2d8cff; border:none; border-radius:12px; color:#fff; font-weight:600; margin-top:8px; cursor:pointer; }
-.secondary { background:#333; }
+.red { background:#7f1d1d; color:#fca5a5; }
+.container { max-width:520px; margin:0 auto; padding:12px; }
+.card { background:#1a1a24; border-radius:16px; padding:16px; margin-bottom:12px; border:1px solid #2a2a3a; }
+.card h3 { font-size:16px; margin-bottom:12px; color:#60a5fa; display:flex; align-items:center; gap:8px; }
+input, textarea, select { width:100%; padding:12px; border-radius:12px; border:1px solid #333; background:#0e0e16; color:#fff; font-size:14px; margin:6px 0; }
+textarea { min-height:80px; resize:vertical; }
+button { width:100%; padding:12px; background:#3b82f6; border:none; border-radius:12px; color:#fff; font-weight:600; font-size:14px; cursor:pointer; margin-top:8px; }
+button.secondary { background:#374151; }
+button.danger { background:#ef4444; }
+button.success { background:#10b981; }
 .accounts { display:flex; flex-wrap:wrap; gap:6px; margin:8px 0; }
-.chip { background:#252536; padding:6px 12px; border-radius:20px; font-size:13px; display:flex; align-items:center; gap:6px; }
+.chip { background:#252536; padding:6px 10px; border-radius:20px; font-size:13px; display:flex; align-items:center; gap:6px; }
 .chip input { width:auto; margin:0; }
-.session-item { background:#1e1e2e; padding:10px 12px; border-radius:10px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center; }
-.delete { background:#ef4444; color:#fff; border:none; padding:4px 10px; border-radius:8px; font-size:12px; width:auto; }
-#log { background:#0e0e16; border-radius:10px; padding:12px; height:120px; overflow-y:auto; font-family:monospace; font-size:12px; }
-.success { color:#4ade80; }
-.error { color:#f87171; }
-.info { color:#60a5fa; }
-.bg-preview { width:100%; height:100px; border-radius:12px; background-size:cover; background-position:center; margin:8px 0; border:1px solid #333; }
+.log { background:#0e0e16; border-radius:12px; padding:12px; max-height:200px; overflow-y:auto; font-size:13px; font-family:monospace; }
+.log .success { color:#4ade80; }
+.log .error { color:#f87171; }
+.log .info { color:#60a5fa; }
+.session-item { display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid #2a2a3a; }
+.session-item button { width:auto; padding:6px 10px; font-size:12px; }
 </style>
 </head>
 <body>
 <div class="header">
-  <span></span>
-  <h1>V Bot</h1>
+  <h1>⚡ Admin Panel</h1>
   <a href="/logout" class="logout">Logout</a>
 </div>
-<div class="status-bar">
-  <span class="badge green">● Userbot läuft</span>
-  <span class="badge purple" id="activeCount">0 aktiv</span>
-  <span class="badge orange">⚡ Auto-Send AUS</span>
-  <span class="badge">🛡️ 2–5 s</span>
+<div class="status">
+  <div class="badge green" id="activeCount">0 aktiv</div>
+  <div class="badge orange" id="bannedCount">0 gebannt</div>
+  <div class="badge red" id="frozenCount">0 gefreezed</div>
 </div>
 <div class="container">
-  <div class="menu-item" onclick="togglePanel('send')">
-    <div class="menu-left"><div class="menu-icon">✉️</div><div class="menu-title">Nachrichten senden</div></div>
-    <div class="menu-right"><span class="menu-badge" id="sendCount">0 Konten</span><span class="arrow">›</span></div>
-  </div>
-  <div id="send" class="panel">
-    <form id="sendForm">
-      <div class="accounts" id="accountSelect"></div>
-      <button type="button" class="secondary" onclick="loadGroups()">Gruppen laden</button>
-      <div id="groupList" style="max-height:160px; overflow-y:auto; margin:8px 0;"></div>
-      <input name="group" id="manualGroup" placeholder="Oder manuell: @gruppe / Link">
-      <input type="file" name="file">
-      <textarea name="caption" placeholder="Nachricht..."></textarea>
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-        <input type="number" name="rounds" value="1" min="1" placeholder="Wie oft">
-        <input type="number" name="delay" value="8" min="1" placeholder="Delay (s)">
-      </div>
-      <button type="submit">Senden</button>
-    </form>
-  </div>
 
-  <div class="menu-item" onclick="togglePanel('join')">
-    <div class="menu-left"><div class="menu-icon">➕</div><div class="menu-title">Gruppe beitreten</div></div>
-    <div class="menu-right"><span class="menu-badge" id="joinCount">0 Konten</span><span class="arrow">›</span></div>
-  </div>
-  <div id="join" class="panel">
-    <div class="accounts" id="joinAccountSelect"></div>
-    <input id="joinLink" placeholder="https://t.me/gruppe oder +invite">
-    <button onclick="joinGroup()">Joinen</button>
-  </div>
-
-  <div class="menu-item" onclick="togglePanel('sessions')">
-    <div class="menu-left"><div class="menu-icon">👤</div><div class="menu-title">Aktive Konten</div></div>
-    <div class="menu-right"><span class="menu-badge" id="sessionBadge">0 aktiv</span><span class="arrow">›</span></div>
-  </div>
-  <div id="sessions" class="panel">
+  <div class="card">
+    <h3>👤 Konten</h3>
     <div id="sessionList"></div>
-  </div>
-
-  <div class="menu-item" onclick="togglePanel('upload')">
-    <div class="menu-left"><div class="menu-icon">📤</div><div class="menu-title">Sessions hochladen</div></div>
-    <div class="menu-right"><span class="arrow">›</span></div>
-  </div>
-  <div id="upload" class="panel">
-    <form id="uploadForm">
+    <form id="uploadForm" style="margin-top:12px;">
       <input type="file" id="sessionFile" accept=".session">
-      <button type="submit">Hochladen</button>
+      <button type="submit">Session hochladen</button>
     </form>
   </div>
 
-  <div class="menu-item" onclick="togglePanel('bg')">
-    <div class="menu-left"><div class="menu-icon">🖼️</div><div class="menu-title">Hintergrund ändern</div></div>
-    <div class="menu-right"><span class="arrow">›</span></div>
-  </div>
-  <div id="bg" class="panel">
-    <div class="bg-preview" id="bgPreview" style="background-image:url('/static/bg.jpg?t=' + Date.now());"></div>
-    <form id="bgForm">
-      <input type="file" id="bgFile" accept="image/*">
-      <button type="submit">Hintergrund ändern</button>
-    </form>
+  <div class="card">
+    <h3>📤 An alle Chats senden</h3>
+    <div class="accounts" id="sendAllAccounts"></div>
+    <input type="number" id="sendAllCount" placeholder="Wie viele Konten auf einmal" value="5" min="1">
+    <input type="number" id="sendAllRounds" placeholder="Wie oft" value="1" min="1">
+    <input type="number" id="sendAllDelay" placeholder="Delay (Sekunden)" value="10" min="1">
+    <textarea id="sendAllText" placeholder="Nachricht..."></textarea>
+    <input type="file" id="sendAllFile" accept="image/*,video/*">
+    <input type="text" id="sendAllEmoji" placeholder="Emoji (optional, z.B. 🔥)">
+    <button onclick="sendAll()">Senden</button>
   </div>
 
-  <div class="menu-item" onclick="togglePanel('log')">
-    <div class="menu-left"><div class="menu-icon">📋</div><div class="menu-title">Log</div></div>
-    <div class="menu-right"><span class="arrow">›</span></div>
+  <div class="card">
+    <h3>💬 DM an User</h3>
+    <div class="accounts" id="dmAccounts"></div>
+    <input type="text" id="dmUser" placeholder="Username oder User-ID">
+    <textarea id="dmText" placeholder="Nachricht..."></textarea>
+    <input type="file" id="dmFile" accept="image/*,video/*">
+    <button onclick="sendDM()">DM senden</button>
   </div>
-  <div id="logPanel" class="panel">
-    <div id="log">Bereit...</div>
+
+  <div class="card">
+    <h3>🚩 Report</h3>
+    <div class="accounts" id="reportAccounts"></div>
+    <input type="text" id="reportTarget" placeholder="Username / Chat / Link">
+    <select id="reportReason">
+      <option value="spam">Spam</option>
+      <option value="violence">Gewalt</option>
+      <option value="pornography">Pornografie</option>
+      <option value="child_abuse">Kinderpornografie</option>
+      <option value="copyright">Urheberrecht</option>
+      <option value="other">Anderes</option>
+    </select>
+    <button class="danger" onclick="report()">Reporten</button>
   </div>
+
+  <div class="card">
+    <h3>❤️ Reaktion / Umfrage</h3>
+    <div class="accounts" id="reactAccounts"></div>
+    <input type="text" id="reactChat" placeholder="Chat / Gruppe">
+    <input type="number" id="reactMsgId" placeholder="Nachrichten-ID">
+    <input type="text" id="reactEmoji" placeholder="Emoji (z.B. 👍)">
+    <button class="success" onclick="react()">Reaktion senden</button>
+    <hr style="border-color:#333; margin:16px 0;">
+    <input type="text" id="pollChat" placeholder="Chat für Umfrage">
+    <input type="text" id="pollQuestion" placeholder="Frage">
+    <textarea id="pollOptions" placeholder="Optionen (eine pro Zeile)"></textarea>
+    <button onclick="createPoll()">Umfrage erstellen</button>
+  </div>
+
+  <div class="card">
+    <h3>➕ Gruppe beitreten</h3>
+    <div class="accounts" id="joinAccounts"></div>
+    <input type="text" id="joinLink" placeholder="Invite-Link oder @username">
+    <button class="success" onclick="joinGroup()">Joinen</button>
+  </div>
+
+  <div class="card">
+    <h3>📋 Log</h3>
+    <div class="log" id="log">Bereit...</div>
+  </div>
+
 </div>
 <script>
-function togglePanel(id) {
-  const panel = document.getElementById(id === 'log' ? 'logPanel' : id);
-  document.querySelectorAll('.panel').forEach(p => { if (p !== panel) p.style.display = 'none'; });
-  panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+function log(msg, type='info') {
+  const el = document.getElementById('log');
+  el.innerHTML = `<div class="${type}">${new Date().toLocaleTimeString()} - ${msg}</div>` + el.innerHTML;
 }
 async function loadSessions() {
   const res = await fetch('/sessions');
-  const sessions = await res.json();
+  const data = await res.json();
+  const sessions = data.sessions || [];
+  const banned = data.banned || [];
+  const frozen = data.frozen || [];
   document.getElementById('activeCount').textContent = sessions.length + ' aktiv';
-  document.getElementById('sessionBadge').textContent = sessions.length + ' aktiv';
-  document.getElementById('sendCount').textContent = sessions.length + ' Konten';
-  document.getElementById('joinCount').textContent = sessions.length + ' Konten';
+  document.getElementById('bannedCount').textContent = banned.length + ' gebannt';
+  document.getElementById('frozenCount').textContent = frozen.length + ' gefreezed';
   const list = document.getElementById('sessionList');
-  const select = document.getElementById('accountSelect');
-  const joinSelect = document.getElementById('joinAccountSelect');
-  if (!sessions.length) {
-    list.innerHTML = '<p style="color:#666;">Keine Sessions</p>';
-    select.innerHTML = '<p style="color:#666;">Keine</p>';
-    joinSelect.innerHTML = '<p style="color:#666;">Keine</p>';
-    return;
-  }
-  list.innerHTML = sessions.map(s => `<div class="session-item"><span>${s}</span><button class="delete" onclick="deleteSession('${s}')">Löschen</button></div>`).join('');
-  const chips = sessions.map(s => `<label class="chip"><input type="checkbox" name="accounts" value="${s}" checked> ${s}</label>`).join('');
-  select.innerHTML = chips;
-  joinSelect.innerHTML = sessions.map(s => `<label class="chip"><input type="checkbox" name="joinAccounts" value="${s}" checked> ${s}</label>`).join('');
+  list.innerHTML = sessions.map(s => `<div class="session-item"><span>${s}</span><button class="danger" onclick="deleteSession('${s}')">Löschen</button></div>`).join('') || '<p style="color:#666;">Keine</p>';
+  const chips = sessions.map(s => `<label class="chip"><input type="checkbox" value="${s}" checked> ${s}</label>`).join('');
+  ['sendAllAccounts','dmAccounts','reportAccounts','reactAccounts','joinAccounts'].forEach(id => {
+    document.getElementById(id).innerHTML = chips;
+  });
 }
-function log(msg, type='info') {
-  const el = document.getElementById('log');
-  el.innerHTML += `<div class="${type}">${msg}</div>`;
-  el.scrollTop = el.scrollHeight;
+async function deleteSession(name) {
+  if (!confirm('Löschen?')) return;
+  await fetch('/session/delete', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name})});
+  loadSessions();
+  log(name + ' gelöscht', 'info');
 }
 document.getElementById('uploadForm').onsubmit = async (e) => {
   e.preventDefault();
-  const fileInput = document.getElementById('sessionFile');
-  if (!fileInput.files[0]) return alert('Datei auswählen');
-  const data = new FormData();
-  data.append('file', fileInput.files[0]);
-  log('Lade Session hoch...', 'info');
-  try {
-    const res = await fetch('/session/upload', { method:'POST', body:data });
-    const result = await res.json();
-    if (result.ok) { log('Hochgeladen: ' + result.name, 'success'); loadSessions(); }
-    else log(result.error || 'Fehler', 'error');
-  } catch(err) { log('Fehler: ' + err, 'error'); }
-};
-document.getElementById('bgForm').onsubmit = async (e) => {
-  e.preventDefault();
-  const fileInput = document.getElementById('bgFile');
-  if (!fileInput.files[0]) return alert('Bild auswählen');
-  const data = new FormData();
-  data.append('file', fileInput.files[0]);
-  log('Ändere Hintergrund...', 'info');
-  try {
-    const res = await fetch('/bg/upload', { method:'POST', body:data });
-    const result = await res.json();
-    if (result.ok) {
-      log('Hintergrund geändert', 'success');
-      document.getElementById('bgPreview').style.backgroundImage = "url('/static/bg.jpg?t=" + Date.now() + "')";
-    } else log(result.error || 'Fehler', 'error');
-  } catch(err) { log('Fehler: ' + err, 'error'); }
-};
-async function deleteSession(name) {
-  if (!confirm('Löschen?')) return;
-  const res = await fetch('/session/delete', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name}) });
+  const file = document.getElementById('sessionFile').files[0];
+  if (!file) return;
+  const form = new FormData();
+  form.append('file', file);
+  const res = await fetch('/session/upload', {method:'POST', body:form});
   const data = await res.json();
-  if (data.ok) { log('Gelöscht: ' + name, 'success'); loadSessions(); }
-  else log(data.error || 'Fehler', 'error');
+  if (data.ok) { log('Session hochgeladen: ' + data.name, 'success'); loadSessions(); }
+  else log(data.error, 'error');
+};
+function getChecked(id) {
+  return [...document.querySelectorAll(`#${id} input:checked`)].map(i => i.value);
+}
+async function sendAll() {
+  const accounts = getChecked('sendAllAccounts');
+  const count = parseInt(document.getElementById('sendAllCount').value) || 5;
+  const rounds = parseInt(document.getElementById('sendAllRounds').value) || 1;
+  const delay = parseInt(document.getElementById('sendAllDelay').value) || 10;
+  const text = document.getElementById('sendAllText').value;
+  const emoji = document.getElementById('sendAllEmoji').value;
+  const file = document.getElementById('sendAllFile').files[0];
+  if (!accounts.length) return alert('Konten auswählen');
+  const form = new FormData();
+  accounts.slice(0, count).forEach(a => form.append('accounts', a));
+  form.append('text', text);
+  form.append('emoji', emoji);
+  form.append('rounds', rounds);
+  form.append('delay', delay);
+  form.append('mode', 'all');
+  if (file) form.append('file', file);
+  log('Sende an alle Chats...', 'info');
+  const res = await fetch('/send', {method:'POST', body:form});
+  const data = await res.json();
+  (data.results || []).forEach(r => log(r.message, r.ok ? 'success' : 'error'));
+}
+async function sendDM() {
+  const accounts = getChecked('dmAccounts');
+  const user = document.getElementById('dmUser').value.trim();
+  const text = document.getElementById('dmText').value;
+  const file = document.getElementById('dmFile').files[0];
+  if (!accounts.length || !user) return alert('Konten + User auswählen');
+  const form = new FormData();
+  accounts.forEach(a => form.append('accounts', a));
+  form.append('text', text);
+  form.append('target', user);
+  form.append('mode', 'dm');
+  if (file) form.append('file', file);
+  log('Sende DM...', 'info');
+  const res = await fetch('/send', {method:'POST', body:form});
+  const data = await res.json();
+  (data.results || []).forEach(r => log(r.message, r.ok ? 'success' : 'error'));
+}
+async function report() {
+  const accounts = getChecked('reportAccounts');
+  const target = document.getElementById('reportTarget').value.trim();
+  const reason = document.getElementById('reportReason').value;
+  if (!accounts.length || !target) return alert('Konten + Ziel');
+  const res = await fetch('/report', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({accounts, target, reason})});
+  const data = await res.json();
+  (data.results || []).forEach(r => log(r.message, r.ok ? 'success' : 'error'));
+}
+async function react() {
+  const accounts = getChecked('reactAccounts');
+  const chat = document.getElementById('reactChat').value.trim();
+  const msgId = parseInt(document.getElementById('reactMsgId').value);
+  const emoji = document.getElementById('reactEmoji').value.trim() || '👍';
+  if (!accounts.length || !chat || !msgId) return alert('Alles ausfüllen');
+  const res = await fetch('/react', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({accounts, chat, msg_id: msgId, emoji})});
+  const data = await res.json();
+  (data.results || []).forEach(r => log(r.message, r.ok ? 'success' : 'error'));
+}
+async function createPoll() {
+  const accounts = getChecked('reactAccounts');
+  const chat = document.getElementById('pollChat').value.trim();
+  const question = document.getElementById('pollQuestion').value.trim();
+  const options = document.getElementById('pollOptions').value.split('\\n').filter(o => o.trim());
+  if (!accounts.length || !chat || !question || options.length < 2) return alert('Alles ausfüllen');
+  const res = await fetch('/poll', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({accounts, chat, question, options})});
+  const data = await res.json();
+  (data.results || []).forEach(r => log(r.message, r.ok ? 'success' : 'error'));
 }
 async function joinGroup() {
+  const accounts = getChecked('joinAccounts');
   const link = document.getElementById('joinLink').value.trim();
-  const accounts = [...document.querySelectorAll('input[name="joinAccounts"]:checked')].map(i => i.value);
-  if (!link) return alert('Link eingeben');
-  if (!accounts.length) return alert('Account auswählen');
-  log('Joine...', 'info');
-  const res = await fetch('/join', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({link, accounts}) });
+  if (!accounts.length || !link) return alert('Konten + Link');
+  const res = await fetch('/join', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({accounts, link})});
   const data = await res.json();
-  data.results.forEach(r => log(r.message, r.ok ? 'success' : 'error'));
+  (data.results || []).forEach(r => log(r.message, r.ok ? 'success' : 'error'));
 }
-async function loadGroups() {
-  const checked = [...document.querySelectorAll('input[name="accounts"]:checked')].map(i => i.value);
-  if (!checked.length) return alert('Account auswählen');
-  log('Lade Gruppen...', 'info');
-  const res = await fetch('/groups', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({accounts: checked}) });
-  const data = await res.json();
-  const list = document.getElementById('groupList');
-  if (!data.groups || !data.groups.length) { list.innerHTML = '<p style="color:#666;">Keine Gruppen</p>'; return; }
-  list.innerHTML = data.groups.map(g => `<label class="chip" style="display:flex; width:100%; margin-bottom:4px;"><input type="checkbox" name="groups" value="${g.id}"> ${g.title}</label>`).join('');
-  log(data.groups.length + ' Gruppen geladen', 'success');
-}
-document.getElementById('sendForm').onsubmit = async (e) => {
-  e.preventDefault();
-  const form = e.target;
-  const data = new FormData(form);
-  const accounts = [...document.querySelectorAll('input[name="accounts"]:checked')].map(i => i.value);
-  const groups = [...document.querySelectorAll('input[name="groups"]:checked')].map(i => i.value);
-  const manual = document.getElementById('manualGroup').value.trim();
-  if (!accounts.length) return alert('Account auswählen');
-  if (!groups.length && !manual) return alert('Gruppe auswählen');
-  data.delete('accounts'); data.delete('groups');
-  accounts.forEach(a => data.append('accounts', a));
-  groups.forEach(g => data.append('groups', g));
-  if (manual) data.append('manual', manual);
-  log('Sende...', 'info');
-  const btn = form.querySelector('button[type=submit]');
-  btn.disabled = true;
-  try {
-    const res = await fetch('/send', {method:'POST', body:data});
-    const result = await res.json();
-    result.results.forEach(r => log(r.message, r.ok ? 'success' : 'error'));
-  } catch(err) { log('Fehler: ' + err, 'error'); }
-  btn.disabled = false;
-};
 loadSessions();
 </script>
 </body>
@@ -474,55 +475,26 @@ async def logout(request: Request):
 async def sessions(request: Request):
     if not check_auth(request):
         return JSONResponse({"error": "unauthorized"}, status_code=401)
-    return get_sessions()
-
-@app.post("/groups")
-async def get_groups(request: Request):
-    if not check_auth(request):
-        return JSONResponse({"error": "unauthorized"}, status_code=401)
-    data = await request.json()
-    accounts = data.get("accounts", [])
-    groups = []
-    seen = set()
-    for session_name in accounts[:3]:
+    all_sessions = get_sessions()
+    banned = []
+    frozen = []
+    active = []
+    for s in all_sessions:
         try:
-            client = TelegramClient(str(SESSIONS_DIR / session_name), API_ID, API_HASH)
-            await client.start()
-            async for dialog in client.iter_dialogs():
-                if dialog.is_group or dialog.is_channel:
-                    if dialog.id not in seen:
-                        seen.add(dialog.id)
-                        groups.append({"id": dialog.id, "title": dialog.title or str(dialog.id)})
+            client = TelegramClient(str(SESSIONS_DIR / s), API_ID, API_HASH)
+            await client.connect()
+            if not await client.is_user_authorized():
+                frozen.append(s)
+            else:
+                me = await client.get_me()
+                if getattr(me, 'restricted', False) or getattr(me, 'deleted', False):
+                    banned.append(s)
+                else:
+                    active.append(s)
             await client.disconnect()
         except Exception:
-            pass
-    return {"groups": groups[:100]}
-
-@app.post("/join")
-async def join_group(request: Request):
-    if not check_auth(request):
-        return JSONResponse({"results": [{"ok": False, "message": "unauthorized"}]}, status_code=401)
-    data = await request.json()
-    link = data.get("link", "").strip()
-    accounts = data.get("accounts", [])
-    results = []
-    for session_name in accounts:
-        try:
-            client = TelegramClient(str(SESSIONS_DIR / session_name), API_ID, API_HASH)
-            await client.start()
-            me = await client.get_me()
-            name = me.first_name or session_name
-            if "/+" in link or "joinchat" in link:
-                hash_part = link.split("/")[-1].replace("+", "")
-                await client(ImportChatInviteRequest(hash_part))
-            else:
-                await client(JoinChannelRequest(link))
-            results.append({"ok": True, "message": f"[{name}] erfolgreich gejoint"})
-            await client.disconnect()
-            await asyncio.sleep(2)
-        except Exception as e:
-            results.append({"ok": False, "message": f"[{session_name}] {str(e)[:80]}"})
-    return {"results": results}
+            frozen.append(s)
+    return {"sessions": active, "banned": banned, "frozen": frozen}
 
 @app.post("/session/upload")
 async def upload_session(request: Request, file: UploadFile = File(...)):
@@ -548,15 +520,152 @@ async def delete_session(request: Request):
         return {"ok": True}
     return {"ok": False, "error": "Nicht gefunden"}
 
-@app.post("/bg/upload")
-async def upload_bg(request: Request, file: UploadFile = File(...)):
+@app.post("/send")
+async def send(request: Request):
     if not check_auth(request):
-        return JSONResponse({"ok": False, "error": "unauthorized"}, status_code=401)
-    if not file.content_type.startswith("image/"):
-        return {"ok": False, "error": "Nur Bilder"}
-    with open(BG_PATH, "wb") as f:
-        shutil.copyfileobj(file.file, f)
-    return {"ok": True}
+        return JSONResponse({"results": [{"ok": False, "message": "unauthorized"}]}, status_code=401)
+    form = await request.form()
+    accounts = form.getlist("accounts")
+    text = form.get("text", "")
+    emoji = form.get("emoji", "")
+    mode = form.get("mode", "all")
+    target = form.get("target", "")
+    rounds = int(form.get("rounds", 1))
+    delay = int(form.get("delay", 10))
+    file = form.get("file")
+    temp_path = None
+    if file and hasattr(file, 'filename') and file.filename:
+        temp_path = tempfile.mktemp(suffix=Path(file.filename).suffix)
+        with open(temp_path, "wb") as f:
+            f.write(await file.read())
+    results = []
+    full_text = (emoji + " " + text).strip() if emoji else text
+    for r in range(rounds):
+        for session_name in accounts:
+            try:
+                client = TelegramClient(str(SESSIONS_DIR / session_name), API_ID, API_HASH)
+                await client.start()
+                me = await client.get_me()
+                name = me.first_name or session_name
+                if mode == "all":
+                    async for dialog in client.iter_dialogs():
+                        try:
+                            if temp_path:
+                                await client.send_file(dialog.id, temp_path, caption=full_text or None)
+                            elif full_text:
+                                await client.send_message(dialog.id, full_text)
+                            results.append({"ok": True, "message": f"[{name}] → {dialog.name}"})
+                        except Exception as e:
+                            results.append({"ok": False, "message": f"[{name}] → {dialog.name}: {str(e)[:50]}"})
+                elif mode == "dm" and target:
+                    try:
+                        if temp_path:
+                            await client.send_file(target, temp_path, caption=full_text or None)
+                        elif full_text:
+                            await client.send_message(target, full_text)
+                        results.append({"ok": True, "message": f"[{name}] DM an {target}"})
+                    except Exception as e:
+                        results.append({"ok": False, "message": f"[{name}] DM: {str(e)[:50]}"})
+                await client.disconnect()
+                await asyncio.sleep(delay)
+            except Exception as e:
+                results.append({"ok": False, "message": f"[{session_name}] {str(e)[:60]}"})
+    if temp_path and os.path.exists(temp_path):
+        os.remove(temp_path)
+    return {"results": results}
+
+@app.post("/report")
+async def report(request: Request):
+    if not check_auth(request):
+        return JSONResponse({"results": [{"ok": False, "message": "unauthorized"}]}, status_code=401)
+    data = await request.json()
+    accounts = data.get("accounts", [])
+    target = data.get("target", "")
+    reason = data.get("reason", "spam")
+    results = []
+    for session_name in accounts:
+        try:
+            client = TelegramClient(str(SESSIONS_DIR / session_name), API_ID, API_HASH)
+            await client.start()
+            entity = await client.get_entity(target)
+            await client.report_peer(entity, reason)
+            results.append({"ok": True, "message": f"[{session_name}] reported {target}"})
+            await client.disconnect()
+        except Exception as e:
+            results.append({"ok": False, "message": f"[{session_name}] {str(e)[:60]}"})
+    return {"results": results}
+
+@app.post("/react")
+async def react(request: Request):
+    if not check_auth(request):
+        return JSONResponse({"results": [{"ok": False, "message": "unauthorized"}]}, status_code=401)
+    data = await request.json()
+    accounts = data.get("accounts", [])
+    chat = data.get("chat", "")
+    msg_id = data.get("msg_id")
+    emoji = data.get("emoji", "👍")
+    results = []
+    for session_name in accounts:
+        try:
+            client = TelegramClient(str(SESSIONS_DIR / session_name), API_ID, API_HASH)
+            await client.start()
+            entity = await client.get_entity(chat)
+            await client(SendReactionRequest(peer=entity, msg_id=msg_id, reaction=[ReactionEmoji(emoticon=emoji)]))
+            results.append({"ok": True, "message": f"[{session_name}] reacted {emoji}"})
+            await client.disconnect()
+        except Exception as e:
+            results.append({"ok": False, "message": f"[{session_name}] {str(e)[:60]}"})
+    return {"results": results}
+
+@app.post("/poll")
+async def poll(request: Request):
+    if not check_auth(request):
+        return JSONResponse({"results": [{"ok": False, "message": "unauthorized"}]}, status_code=401)
+    data = await request.json()
+    accounts = data.get("accounts", [])
+    chat = data.get("chat", "")
+    question = data.get("question", "")
+    options = data.get("options", [])
+    results = []
+    for session_name in accounts:
+        try:
+            client = TelegramClient(str(SESSIONS_DIR / session_name), API_ID, API_HASH)
+            await client.start()
+            entity = await client.get_entity(chat)
+            await client.send_message(entity, file=None, message=question, buttons=None)
+            # Simple poll via send_message with options as text for now
+            poll_text = question + "\\n" + "\\n".join([f"{i+1}. {o}" for i, o in enumerate(options)])
+            await client.send_message(entity, poll_text)
+            results.append({"ok": True, "message": f"[{session_name}] poll sent"})
+            await client.disconnect()
+        except Exception as e:
+            results.append({"ok": False, "message": f"[{session_name}] {str(e)[:60]}"})
+    return {"results": results}
+
+@app.post("/join")
+async def join_group(request: Request):
+    if not check_auth(request):
+        return JSONResponse({"results": [{"ok": False, "message": "unauthorized"}]}, status_code=401)
+    data = await request.json()
+    link = data.get("link", "").strip()
+    accounts = data.get("accounts", [])
+    results = []
+    for session_name in accounts:
+        try:
+            client = TelegramClient(str(SESSIONS_DIR / session_name), API_ID, API_HASH)
+            await client.start()
+            me = await client.get_me()
+            name = me.first_name or session_name
+            if "/+" in link or "joinchat" in link:
+                hash_part = link.split("/")[-1].replace("+", "")
+                await client(ImportChatInviteRequest(hash_part))
+            else:
+                await client(JoinChannelRequest(link))
+            results.append({"ok": True, "message": f"[{name}] beigetreten"})
+            await client.disconnect()
+        except Exception as e:
+            results.append({"ok": False, "message": f"[{session_name}] {str(e)[:60]}"})
+    return {"results": results}
 
 @app.post("/verify/start")
 async def verify_start(request: Request):
@@ -596,49 +705,8 @@ async def verify_finish(request: Request):
     login_clients.pop(phone, None)
     return {"ok": True, "name": me.first_name or phone}
 
-@app.post("/send")
-async def send(request: Request, caption: str = Form(""), delay: int = Form(8), rounds: int = Form(1), file: UploadFile = File(None)):
-    if not check_auth(request):
-        return JSONResponse({"results": [{"ok": False, "message": "unauthorized"}]}, status_code=401)
-    form = await request.form()
-    accounts = form.getlist("accounts")
-    groups = form.getlist("groups")
-    manual = form.get("manual", "").strip()
-    targets = groups + ([manual] if manual else [])
-    if not accounts or not targets:
-        return {"results": [{"ok": False, "message": "Keine Accounts oder Gruppen"}]}
-    temp_path = None
-    if file and file.filename:
-        temp_path = tempfile.mktemp(suffix=Path(file.filename).suffix)
-        with open(temp_path, "wb") as f:
-            f.write(await file.read())
-    results = []
-    for r in range(rounds):
-        for session_name in accounts:
-            try:
-                client = TelegramClient(str(SESSIONS_DIR / session_name), API_ID, API_HASH)
-                await client.start()
-                me = await client.get_me()
-                name = me.first_name or session_name
-                for target in targets:
-                    try:
-                        if temp_path:
-                            await client.send_file(int(target) if str(target).lstrip('-').isdigit() else target, temp_path, caption=caption or None)
-                        elif caption:
-                            await client.send_message(int(target) if str(target).lstrip('-').isdigit() else target, caption)
-                        results.append({"ok": True, "message": f"[{name}] → {target} gesendet"})
-                    except Exception as e:
-                        results.append({"ok": False, "message": f"[{name}] → {target}: {str(e)[:60]}"})
-                await client.disconnect()
-                await asyncio.sleep(delay)
-            except Exception as e:
-                results.append({"ok": False, "message": f"[{session_name}] {str(e)[:80]}"})
-    if temp_path and os.path.exists(temp_path):
-        os.remove(temp_path)
-    return {"results": results}
-
 if __name__ == "__main__":
     print("Starte auf http://0.0.0.0:8000")
     print(f"Passwort: {ADMIN_PASSWORD}")
     print("Verify-Seite: /verify")
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", 8000)))
