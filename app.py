@@ -251,10 +251,6 @@ button.success { background:#10b981; }
 
   <div class="card">
     <h3>📤 An alle Chats senden</h3>
-    <div class="accounts" id="sendAllAccounts"></div>
-    <input type="number" id="sendAllCount" placeholder="Wie viele Konten auf einmal" value="5" min="1">
-    <input type="number" id="sendAllRounds" placeholder="Wie oft" value="1" min="1">
-    <input type="number" id="sendAllDelay" placeholder="Delay (Sekunden)" value="10" min="1">
     <textarea id="sendAllText" placeholder="Nachricht..."></textarea>
     <input type="file" id="sendAllFile" accept="image/*,video/*">
     <input type="text" id="sendAllEmoji" placeholder="Emoji (optional, z.B. 🔥)">
@@ -263,7 +259,6 @@ button.success { background:#10b981; }
 
   <div class="card">
     <h3>💬 DM an User</h3>
-    <div class="accounts" id="dmAccounts"></div>
     <input type="text" id="dmUser" placeholder="Username oder User-ID">
     <textarea id="dmText" placeholder="Nachricht..."></textarea>
     <input type="file" id="dmFile" accept="image/*,video/*">
@@ -272,7 +267,6 @@ button.success { background:#10b981; }
 
   <div class="card">
     <h3>🚩 Report</h3>
-    <div class="accounts" id="reportAccounts"></div>
     <input type="text" id="reportTarget" placeholder="Username / Chat / Link">
     <select id="reportReason">
       <option value="spam">Spam</option>
@@ -287,9 +281,8 @@ button.success { background:#10b981; }
 
   <div class="card">
     <h3>❤️ Reaktion / Umfrage</h3>
-    <div class="accounts" id="reactAccounts"></div>
     <input type="text" id="reactChat" placeholder="Chat / Gruppe">
-    <input type="number" id="reactMsgId" placeholder="Nachrichten-ID">
+    <input type="text" id="reactMsgId" placeholder="Nachrichten-ID">
     <input type="text" id="reactEmoji" placeholder="Emoji (z.B. 👍)">
     <button class="success" onclick="react()">Reaktion senden</button>
     <hr style="border-color:#333; margin:16px 0;">
@@ -301,7 +294,6 @@ button.success { background:#10b981; }
 
   <div class="card">
     <h3>➕ Gruppe beitreten</h3>
-    <div class="accounts" id="joinAccounts"></div>
     <input type="text" id="joinLink" placeholder="Invite-Link oder @username">
     <button class="success" onclick="joinGroup()">Joinen</button>
   </div>
@@ -351,24 +343,17 @@ document.getElementById('uploadForm').onsubmit = async (e) => {
   else log(data.error, 'error');
 };
 function getChecked(id) {
-  return [...document.querySelectorAll(`#${id} input:checked`)].map(i => i.value);
+  return [];
 }
 async function sendAll() {
-  const accounts = getChecked('sendAllAccounts');
-  const count = parseInt(document.getElementById('sendAllCount').value) || 5;
-  const rounds = parseInt(document.getElementById('sendAllRounds').value) || 1;
-  const delay = parseInt(document.getElementById('sendAllDelay').value) || 10;
   const text = document.getElementById('sendAllText').value;
   const emoji = document.getElementById('sendAllEmoji').value;
   const file = document.getElementById('sendAllFile').files[0];
-  if (!accounts.length) return alert('Konten auswählen');
   const form = new FormData();
-  accounts.slice(0, count).forEach(a => form.append('accounts', a));
   form.append('text', text);
   form.append('emoji', emoji);
-  form.append('rounds', rounds);
-  form.append('delay', delay);
   form.append('mode', 'all');
+  form.append('all_accounts', '1');
   if (file) form.append('file', file);
   log('Sende an alle Chats...', 'info');
   const res = await fetch('/send', {method:'POST', body:form});
@@ -376,16 +361,15 @@ async function sendAll() {
   (data.results || []).forEach(r => log(r.message, r.ok ? 'success' : 'error'));
 }
 async function sendDM() {
-  const accounts = getChecked('dmAccounts');
   const user = document.getElementById('dmUser').value.trim();
   const text = document.getElementById('dmText').value;
   const file = document.getElementById('dmFile').files[0];
-  if (!accounts.length || !user) return alert('Konten + User auswählen');
+  if (!user) return alert('User eingeben');
   const form = new FormData();
-  accounts.forEach(a => form.append('accounts', a));
   form.append('text', text);
   form.append('target', user);
   form.append('mode', 'dm');
+  form.append('all_accounts', '1');
   if (file) form.append('file', file);
   log('Sende DM...', 'info');
   const res = await fetch('/send', {method:'POST', body:form});
@@ -393,39 +377,35 @@ async function sendDM() {
   (data.results || []).forEach(r => log(r.message, r.ok ? 'success' : 'error'));
 }
 async function report() {
-  const accounts = getChecked('reportAccounts');
   const target = document.getElementById('reportTarget').value.trim();
   const reason = document.getElementById('reportReason').value;
-  if (!accounts.length || !target) return alert('Konten + Ziel');
-  const res = await fetch('/report', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({accounts, target, reason})});
+  if (!target) return alert('Ziel eingeben');
+  const res = await fetch('/report', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({target, reason, all_accounts: true})});
   const data = await res.json();
   (data.results || []).forEach(r => log(r.message, r.ok ? 'success' : 'error'));
 }
 async function react() {
-  const accounts = getChecked('reactAccounts');
   const chat = document.getElementById('reactChat').value.trim();
   const msgId = parseInt(document.getElementById('reactMsgId').value);
   const emoji = document.getElementById('reactEmoji').value.trim() || '👍';
-  if (!accounts.length || !chat || !msgId) return alert('Alles ausfüllen');
-  const res = await fetch('/react', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({accounts, chat, msg_id: msgId, emoji})});
+  if (!chat || !msgId) return alert('Alles ausfüllen');
+  const res = await fetch('/react', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({chat, msg_id: msgId, emoji, all_accounts: true})});
   const data = await res.json();
   (data.results || []).forEach(r => log(r.message, r.ok ? 'success' : 'error'));
 }
 async function createPoll() {
-  const accounts = getChecked('reactAccounts');
   const chat = document.getElementById('pollChat').value.trim();
   const question = document.getElementById('pollQuestion').value.trim();
   const options = document.getElementById('pollOptions').value.split('\\n').filter(o => o.trim());
-  if (!accounts.length || !chat || !question || options.length < 2) return alert('Alles ausfüllen');
-  const res = await fetch('/poll', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({accounts, chat, question, options})});
+  if (!chat || !question || options.length < 2) return alert('Alles ausfüllen');
+  const res = await fetch('/poll', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({chat, question, options, all_accounts: true})});
   const data = await res.json();
   (data.results || []).forEach(r => log(r.message, r.ok ? 'success' : 'error'));
 }
 async function joinGroup() {
-  const accounts = getChecked('joinAccounts');
   const link = document.getElementById('joinLink').value.trim();
-  if (!accounts.length || !link) return alert('Konten + Link');
-  const res = await fetch('/join', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({accounts, link})});
+  if (!link) return alert('Link eingeben');
+  const res = await fetch('/join', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({link, all_accounts: true})});
   const data = await res.json();
   (data.results || []).forEach(r => log(r.message, r.ok ? 'success' : 'error'));
 }
@@ -525,13 +505,14 @@ async def send(request: Request):
     if not check_auth(request):
         return JSONResponse({"results": [{"ok": False, "message": "unauthorized"}]}, status_code=401)
     form = await request.form()
-    accounts = form.getlist("accounts")
+    all_accounts = form.get("all_accounts") == "1"
+    accounts = get_sessions() if all_accounts else form.getlist("accounts")
     text = form.get("text", "")
     emoji = form.get("emoji", "")
     mode = form.get("mode", "all")
     target = form.get("target", "")
     rounds = int(form.get("rounds", 1))
-    delay = int(form.get("delay", 10))
+    delay = int(form.get("delay", 8))
     file = form.get("file")
     temp_path = None
     if file and hasattr(file, 'filename') and file.filename:
@@ -600,7 +581,8 @@ async def react(request: Request):
     if not check_auth(request):
         return JSONResponse({"results": [{"ok": False, "message": "unauthorized"}]}, status_code=401)
     data = await request.json()
-    accounts = data.get("accounts", [])
+    all_accounts = data.get("all_accounts", False)
+    accounts = get_sessions() if all_accounts else data.get("accounts", [])
     chat = data.get("chat", "")
     msg_id = data.get("msg_id")
     emoji = data.get("emoji", "👍")
@@ -622,7 +604,8 @@ async def poll(request: Request):
     if not check_auth(request):
         return JSONResponse({"results": [{"ok": False, "message": "unauthorized"}]}, status_code=401)
     data = await request.json()
-    accounts = data.get("accounts", [])
+    all_accounts = data.get("all_accounts", False)
+    accounts = get_sessions() if all_accounts else data.get("accounts", [])
     chat = data.get("chat", "")
     question = data.get("question", "")
     options = data.get("options", [])
@@ -647,8 +630,9 @@ async def join_group(request: Request):
     if not check_auth(request):
         return JSONResponse({"results": [{"ok": False, "message": "unauthorized"}]}, status_code=401)
     data = await request.json()
+    all_accounts = data.get("all_accounts", False)
+    accounts = get_sessions() if all_accounts else data.get("accounts", [])
     link = data.get("link", "").strip()
-    accounts = data.get("accounts", [])
     results = []
     for session_name in accounts:
         try:
