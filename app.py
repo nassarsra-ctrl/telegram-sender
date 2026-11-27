@@ -251,6 +251,8 @@ button.success { background:#10b981; }
 
   <div class="card">
     <h3>📤 An alle Chats senden</h3>
+    <button type="button" class="secondary" onclick="toggleAccounts('sendAllAccounts')">Accounts anzeigen</button>
+    <div class="accounts" id="sendAllAccounts" style="display:none; margin-top:8px;"></div>
     <textarea id="sendAllText" placeholder="Nachricht..."></textarea>
     <input type="file" id="sendAllFile" accept="image/*,video/*">
     <input type="text" id="sendAllEmoji" placeholder="Emoji (optional, z.B. 🔥)">
@@ -259,6 +261,8 @@ button.success { background:#10b981; }
 
   <div class="card">
     <h3>💬 DM an User</h3>
+    <button type="button" class="secondary" onclick="toggleAccounts('dmAccounts')">Accounts anzeigen</button>
+    <div class="accounts" id="dmAccounts" style="display:none; margin-top:8px;"></div>
     <input type="text" id="dmUser" placeholder="Username oder User-ID">
     <textarea id="dmText" placeholder="Nachricht..."></textarea>
     <input type="file" id="dmFile" accept="image/*,video/*">
@@ -267,6 +271,8 @@ button.success { background:#10b981; }
 
   <div class="card">
     <h3>🚩 Report</h3>
+    <button type="button" class="secondary" onclick="toggleAccounts('reportAccounts')">Accounts anzeigen</button>
+    <div class="accounts" id="reportAccounts" style="display:none; margin-top:8px;"></div>
     <input type="text" id="reportTarget" placeholder="Username / Chat / Link">
     <select id="reportReason">
       <option value="spam">Spam</option>
@@ -281,6 +287,8 @@ button.success { background:#10b981; }
 
   <div class="card">
     <h3>❤️ Reaktion / Umfrage</h3>
+    <button type="button" class="secondary" onclick="toggleAccounts('reactAccounts')">Accounts anzeigen</button>
+    <div class="accounts" id="reactAccounts" style="display:none; margin-top:8px;"></div>
     <input type="text" id="reactChat" placeholder="Chat / Gruppe">
     <input type="text" id="reactMsgId" placeholder="Nachrichten-ID">
     <input type="text" id="reactEmoji" placeholder="Emoji (z.B. 👍)">
@@ -294,6 +302,8 @@ button.success { background:#10b981; }
 
   <div class="card">
     <h3>➕ Gruppe beitreten</h3>
+    <button type="button" class="secondary" onclick="toggleAccounts('joinAccounts')">Accounts anzeigen</button>
+    <div class="accounts" id="joinAccounts" style="display:none; margin-top:8px;"></div>
     <input type="text" id="joinLink" placeholder="Invite-Link oder @username">
     <button class="success" onclick="joinGroup()">Joinen</button>
   </div>
@@ -315,14 +325,16 @@ async function loadSessions() {
   const sessions = data.sessions || [];
   const banned = data.banned || [];
   const frozen = data.frozen || [];
+  const info = data.info || [];
   document.getElementById('activeCount').textContent = sessions.length + ' aktiv';
   document.getElementById('bannedCount').textContent = banned.length + ' gebannt';
   document.getElementById('frozenCount').textContent = frozen.length + ' gefreezed';
   const list = document.getElementById('sessionList');
-  list.innerHTML = sessions.map(s => `<div class="session-item"><span>${s}</span><button class="danger" onclick="deleteSession('${s}')">Löschen</button></div>`).join('') || '<p style="color:#666;">Keine</p>';
-  const chips = sessions.map(s => `<label class="chip"><input type="checkbox" value="${s}" checked> ${s}</label>`).join('');
+  list.innerHTML = info.map(s => `<div class="session-item"><span>${s.name} <small style="color:#888;">(${s.session})</small></span><button class="danger" onclick="deleteSession('${s.session}')">Löschen</button></div>`).join('') || '<p style="color:#666;">Keine</p>';
+  const chips = info.filter(s => s.status === 'active').map(s => `<label class="chip"><input type="checkbox" value="${s.session}" checked> ${s.name}</label>`).join('');
   ['sendAllAccounts','dmAccounts','reportAccounts','reactAccounts','joinAccounts'].forEach(id => {
-    document.getElementById(id).innerHTML = chips;
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = chips || '<span style="color:#666;">Keine aktiven Accounts</span>';
   });
 }
 async function deleteSession(name) {
@@ -343,17 +355,19 @@ document.getElementById('uploadForm').onsubmit = async (e) => {
   else log(data.error, 'error');
 };
 function getChecked(id) {
-  return [];
+  return [...document.querySelectorAll(`#${id} input:checked`)].map(i => i.value);
 }
 async function sendAll() {
+  const accounts = getChecked('sendAllAccounts');
   const text = document.getElementById('sendAllText').value;
   const emoji = document.getElementById('sendAllEmoji').value;
   const file = document.getElementById('sendAllFile').files[0];
+  if (!accounts.length) return alert('Accounts auswählen');
   const form = new FormData();
+  accounts.forEach(a => form.append('accounts', a));
   form.append('text', text);
   form.append('emoji', emoji);
   form.append('mode', 'all');
-  form.append('all_accounts', '1');
   if (file) form.append('file', file);
   log('Sende an alle Chats...', 'info');
   const res = await fetch('/send', {method:'POST', body:form});
@@ -361,15 +375,16 @@ async function sendAll() {
   (data.results || []).forEach(r => log(r.message, r.ok ? 'success' : 'error'));
 }
 async function sendDM() {
+  const accounts = getChecked('dmAccounts');
   const user = document.getElementById('dmUser').value.trim();
   const text = document.getElementById('dmText').value;
   const file = document.getElementById('dmFile').files[0];
-  if (!user) return alert('User eingeben');
+  if (!accounts.length || !user) return alert('Accounts + User auswählen');
   const form = new FormData();
+  accounts.forEach(a => form.append('accounts', a));
   form.append('text', text);
   form.append('target', user);
   form.append('mode', 'dm');
-  form.append('all_accounts', '1');
   if (file) form.append('file', file);
   log('Sende DM...', 'info');
   const res = await fetch('/send', {method:'POST', body:form});
@@ -377,35 +392,39 @@ async function sendDM() {
   (data.results || []).forEach(r => log(r.message, r.ok ? 'success' : 'error'));
 }
 async function report() {
+  const accounts = getChecked('reportAccounts');
   const target = document.getElementById('reportTarget').value.trim();
   const reason = document.getElementById('reportReason').value;
-  if (!target) return alert('Ziel eingeben');
-  const res = await fetch('/report', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({target, reason, all_accounts: true})});
+  if (!accounts.length || !target) return alert('Accounts + Ziel auswählen');
+  const res = await fetch('/report', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({accounts, target, reason})});
   const data = await res.json();
   (data.results || []).forEach(r => log(r.message, r.ok ? 'success' : 'error'));
 }
 async function react() {
+  const accounts = getChecked('reactAccounts');
   const chat = document.getElementById('reactChat').value.trim();
   const msgId = parseInt(document.getElementById('reactMsgId').value);
   const emoji = document.getElementById('reactEmoji').value.trim() || '👍';
-  if (!chat || !msgId) return alert('Alles ausfüllen');
-  const res = await fetch('/react', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({chat, msg_id: msgId, emoji, all_accounts: true})});
+  if (!accounts.length || !chat || !msgId) return alert('Alles ausfüllen');
+  const res = await fetch('/react', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({accounts, chat, msg_id: msgId, emoji})});
   const data = await res.json();
   (data.results || []).forEach(r => log(r.message, r.ok ? 'success' : 'error'));
 }
 async function createPoll() {
+  const accounts = getChecked('reactAccounts');
   const chat = document.getElementById('pollChat').value.trim();
   const question = document.getElementById('pollQuestion').value.trim();
   const options = document.getElementById('pollOptions').value.split('\\n').filter(o => o.trim());
-  if (!chat || !question || options.length < 2) return alert('Alles ausfüllen');
-  const res = await fetch('/poll', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({chat, question, options, all_accounts: true})});
+  if (!accounts.length || !chat || !question || options.length < 2) return alert('Alles ausfüllen');
+  const res = await fetch('/poll', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({accounts, chat, question, options})});
   const data = await res.json();
   (data.results || []).forEach(r => log(r.message, r.ok ? 'success' : 'error'));
 }
 async function joinGroup() {
+  const accounts = getChecked('joinAccounts');
   const link = document.getElementById('joinLink').value.trim();
-  if (!link) return alert('Link eingeben');
-  const res = await fetch('/join', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({link, all_accounts: true})});
+  if (!accounts.length || !link) return alert('Accounts + Link auswählen');
+  const res = await fetch('/join', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({accounts, link})});
   const data = await res.json();
   (data.results || []).forEach(r => log(r.message, r.ok ? 'success' : 'error'));
 }
@@ -459,22 +478,28 @@ async def sessions(request: Request):
     banned = []
     frozen = []
     active = []
+    session_info = []
     for s in all_sessions:
         try:
             client = TelegramClient(str(SESSIONS_DIR / s), API_ID, API_HASH)
             await client.connect()
             if not await client.is_user_authorized():
                 frozen.append(s)
+                session_info.append({"session": s, "name": s, "status": "frozen"})
             else:
                 me = await client.get_me()
+                name = me.first_name or me.username or s
                 if getattr(me, 'restricted', False) or getattr(me, 'deleted', False):
                     banned.append(s)
+                    session_info.append({"session": s, "name": name, "status": "banned"})
                 else:
                     active.append(s)
+                    session_info.append({"session": s, "name": name, "status": "active"})
             await client.disconnect()
         except Exception:
             frozen.append(s)
-    return {"sessions": active, "banned": banned, "frozen": frozen}
+            session_info.append({"session": s, "name": s, "status": "error"})
+    return {"sessions": active, "banned": banned, "frozen": frozen, "info": session_info}
 
 @app.post("/session/upload")
 async def upload_session(request: Request, file: UploadFile = File(...)):
