@@ -489,7 +489,8 @@ async def sessions(request: Request):
         try:
             client = TelegramClient(str(SESSIONS_DIR / s), API_ID, API_HASH)
             await client.connect()
-            if not await client.is_user_authorized():
+            authorized = await client.is_user_authorized()
+            if not authorized:
                 frozen.append(s)
                 session_info.append({"session": s, "name": s, "status": "frozen"})
             else:
@@ -502,9 +503,10 @@ async def sessions(request: Request):
                     active.append(s)
                     session_info.append({"session": s, "name": name, "status": "active"})
             await client.disconnect()
-        except Exception:
-            frozen.append(s)
-            session_info.append({"session": s, "name": s, "status": "error"})
+        except Exception as e:
+            # Bei Verbindungsfehlern als aktiv behandeln, nicht als frozen
+            active.append(s)
+            session_info.append({"session": s, "name": s, "status": "active"})
     return {"sessions": active, "banned": banned, "frozen": frozen, "info": session_info}
 
 @app.post("/session/upload")
